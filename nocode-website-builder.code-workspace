@@ -1,0 +1,12 @@
+{
+  "folders": [
+    {
+      "name": "nocode-website-builder",
+      "path": "."
+    }
+  ],
+  "settings": {
+    "window.title": "nocode-website-builder - ${dirty}${activeEditorShort}${separator}${rootName}",
+    "git.autorefresh": true
+  }
+}
