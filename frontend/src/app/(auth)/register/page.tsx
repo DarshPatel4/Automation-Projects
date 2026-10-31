@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Lock, Mail, User, ArrowRight } from 'lucide-react';
+import { Lock, Mail, User, ArrowRight, Layers } from 'lucide-react';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -19,8 +19,8 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
-        <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-indigo-600 text-white font-bold text-2xl shadow-lg shadow-indigo-600/30 mb-3">
-          ▲
+        <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-indigo-600 text-white shadow-lg shadow-indigo-600/30 mb-3">
+          <Layers className="w-6 h-6 text-white" />
         </div>
         <h2 className="text-2xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight">
           Create your account
@@ -110,3 +110,4 @@ export default function RegisterPage() {
     </div>
   );
 }
+

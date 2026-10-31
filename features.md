@@ -51,6 +51,8 @@ This document tracks all features planned, currently in development, and impleme
 | DND-007 | Undo / Redo History Stack | 40-step immutable state snapshot stack with keyboard shortcut bindings | 🟢 Implemented | Phase 1 |
 | DND-008 | Keyboard Shortcuts Engine | Copy (`Ctrl+C`), Paste (`Ctrl+V`), Undo (`Ctrl+Z`), Redo (`Ctrl+Y`) | 🟢 Implemented | Phase 1 |
 | DND-009 | Breadcrumbs Hierarchy Bar | Live bottom breadcrumbs allowing easy traversal to parent nodes | 🟢 Implemented | Phase 1 |
+| DND-010 | Sidebar-to-Canvas Drag & Drop | Drag elements from catalog directly into sections/containers | 🟢 Implemented | Phase 1 |
+| DND-011 | In-Canvas Node Drag & Reparenting | Drag on-canvas nodes to reorder or move across containers | 🟢 Implemented | Phase 1 |
 
 ---
 
@@ -75,6 +77,8 @@ This document tracks all features planned, currently in development, and impleme
 | COMP-005 | Navigation Primitives | Navbar, Mobile Drawer Menu, Brand Logo, CTA Button | 🟢 Implemented | Phase 1 |
 | COMP-006 | Interactive Widgets | Accordion, Tabs, Modal/Popup, Carousel, Lightbox, Counters | 🔵 Planned | Phase 3 |
 | COMP-007 | Pre-built Business Blocks | Hero variants, Features 3-Card Grid, Dark CTA, Clean Footer | 🟢 Implemented | Phase 1 |
+| COMP-008 | Lucide Vector Icon System | Native SVG icon integration with dynamic size, color, name inspector | 🟢 Implemented | Phase 1 |
+| DSGN-001 | Human-Craft Production Design | High-fidelity Linear/Stripe aesthetic, realistic metrics, zero AI emojis | 🟢 Implemented | Phase 1 |
 
 ---
 

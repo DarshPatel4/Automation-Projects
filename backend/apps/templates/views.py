@@ -17,3 +17,4 @@ class TemplateViewSet(viewsets.ReadOnlyModelViewSet):
         if category:
             queryset = queryset.filter(category__slug=category)
         return queryset
+

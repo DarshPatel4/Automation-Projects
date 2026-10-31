@@ -1,10 +1,11 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useEditorStore } from '../stores/editorStore';
 import { ComponentNode, Breakpoint, ComponentStyle } from '../types/builder';
+import { LucideIcon } from '../components/ui/LucideIcon';
 import { cn } from '../utils/cn';
-import { Plus, Trash2, Copy, Lock, EyeOff } from 'lucide-react';
+import { Plus, Trash2, Copy, GripVertical } from 'lucide-react';
 
 interface RenderNodeProps {
   nodeId: string;
@@ -23,6 +24,9 @@ export const RenderNode: React.FC<RenderNodeProps> = ({ nodeId }) => {
   const duplicateNode = useEditorStore((s) => s.duplicateNode);
   const updateNodeProps = useEditorStore((s) => s.updateNodeProps);
   const addNode = useEditorStore((s) => s.addNode);
+  const moveNode = useEditorStore((s) => s.moveNode);
+
+  const [isDragOver, setIsDragOver] = useState(false);
 
   const node = nodes[nodeId];
   if (!node || node.hidden) return null;
@@ -118,6 +122,63 @@ export const RenderNode: React.FC<RenderNodeProps> = ({ nodeId }) => {
     setHoveredNode(null);
   };
 
+  // Drag and Drop handlers
+  const handleDragStart = (e: React.DragEvent) => {
+    if (previewMode || node.locked || nodeId === 'root') return;
+    e.stopPropagation();
+    e.dataTransfer.setData('text/plain', JSON.stringify({ type: 'MOVE_NODE', nodeId }));
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    if (previewMode) return;
+    e.preventDefault();
+    e.stopPropagation();
+    e.dataTransfer.dropEffect = 'copy';
+    if (!isDragOver) setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    if (previewMode) return;
+    e.stopPropagation();
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    if (previewMode) return;
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+
+    try {
+      const dataStr = e.dataTransfer.getData('text/plain');
+      if (!dataStr) return;
+      const data = JSON.parse(dataStr);
+
+      // Dropping an element from the left catalog
+      if (data.type === 'ADD_CATALOG_NODE') {
+        const targetParentId = (node.type === 'Container' || node.type === 'Section' || node.type === 'Body')
+          ? nodeId
+          : (node.parentId || 'root');
+
+        addNode(targetParentId, data.componentType, data.defaultProps, data.defaultStyles);
+      }
+      // Reordering or moving an existing canvas node
+      else if (data.type === 'MOVE_NODE') {
+        const sourceId = data.nodeId;
+        if (sourceId === nodeId) return;
+
+        const targetParentId = (node.type === 'Container' || node.type === 'Section' || node.type === 'Body')
+          ? nodeId
+          : (node.parentId || 'root');
+
+        moveNode(sourceId, targetParentId);
+      }
+    } catch (err) {
+      console.error('Failed to parse drag drop event:', err);
+    }
+  };
+
   const renderChildren = () => {
     return node.children.map((childId) => (
       <RenderNode key={childId} nodeId={childId} />
@@ -129,6 +190,18 @@ export const RenderNode: React.FC<RenderNodeProps> = ({ nodeId }) => {
   // Render elements according to component type
   const renderContent = () => {
     switch (node.type) {
+      case 'Icon': {
+        return (
+          <div style={inlineStyle} className="inline-flex items-center justify-center">
+            <LucideIcon
+              name={node.props?.iconName || 'Layers'}
+              size={node.props?.size || 20}
+              color={node.props?.color || '#ffffff'}
+            />
+          </div>
+        );
+      }
+
       case 'Heading': {
         const level = node.props?.level || 2;
         const Tag = `h${level}` as 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
@@ -162,7 +235,7 @@ export const RenderNode: React.FC<RenderNodeProps> = ({ nodeId }) => {
           <button
             type="button"
             style={inlineStyle}
-            className="transition-all active:scale-95"
+            className="transition-all active:scale-95 inline-flex items-center justify-center gap-2 cursor-pointer"
             contentEditable={isSelected}
             suppressContentEditableWarning
             onBlur={(e) => updateNodeProps(nodeId, { label: (e.currentTarget as HTMLElement).innerText })}
@@ -196,7 +269,7 @@ export const RenderNode: React.FC<RenderNodeProps> = ({ nodeId }) => {
         return (
           <img
             src={node.props?.src || 'https://images.unsplash.com/photo-1557804506-669a67965ba0?w=800&auto=format&fit=crop&q=80'}
-            alt={node.props?.alt || 'Image description'}
+            alt={node.props?.alt || 'Visual element'}
             style={inlineStyle}
             className="object-cover max-w-full"
           />
@@ -207,7 +280,7 @@ export const RenderNode: React.FC<RenderNodeProps> = ({ nodeId }) => {
         return (
           <hr
             style={{
-              borderColor: node.props?.color || '#e2e8f0',
+              borderColor: node.props?.color || 'rgba(255, 255, 255, 0.1)',
               borderTopWidth: node.props?.thickness || '1px',
               ...inlineStyle,
             }}
@@ -236,14 +309,14 @@ export const RenderNode: React.FC<RenderNodeProps> = ({ nodeId }) => {
           <div style={inlineStyle} className="relative">
             {node.children.length === 0 && !previewMode ? (
               <div
-                className="py-8 px-4 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-lg flex flex-col items-center justify-center text-slate-400 gap-2 cursor-pointer hover:border-indigo-400 hover:text-indigo-600 transition-colors"
+                className="py-8 px-4 border-2 border-dashed border-slate-700/60 rounded-xl flex flex-col items-center justify-center text-slate-500 gap-2 cursor-pointer hover:border-indigo-500 hover:text-indigo-400 transition-colors"
                 onClick={(e) => {
                   e.stopPropagation();
-                  addNode(nodeId, 'Heading', { content: 'New Heading', level: 2 });
+                  addNode(nodeId, 'Heading', { content: 'New Section Headline', level: 2 });
                 }}
               >
-                <Plus className="w-5 h-5" />
-                <span className="text-xs font-medium">Empty Container (Click to add element)</span>
+                <Plus className="w-5 h-5 text-indigo-500" />
+                <span className="text-xs font-semibold">Empty Container — Drag elements here or click to add</span>
               </div>
             ) : (
               renderChildren()
@@ -254,21 +327,30 @@ export const RenderNode: React.FC<RenderNodeProps> = ({ nodeId }) => {
     }
   };
 
+  const isDraggable = !previewMode && !node.locked && nodeId !== 'root';
+
   return (
     <div
       id={nodeId}
+      draggable={isDraggable}
+      onDragStart={handleDragStart}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
       onClick={handleClick}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       className={cn(
         'relative transition-all',
         !previewMode && isHovered && 'outline-1 outline-dashed outline-indigo-400',
-        !previewMode && isSelected && 'ring-2 ring-indigo-600 ring-offset-1 z-10'
+        !previewMode && isSelected && 'ring-2 ring-indigo-500 ring-offset-2 ring-offset-slate-900 z-10',
+        isDragOver && 'ring-2 ring-indigo-400 bg-indigo-950/20'
       )}
     >
       {/* Floating Action Badge for Selected Node */}
       {isSelected && (
-        <div className="absolute -top-7 left-0 z-50 flex items-center bg-indigo-600 text-white rounded px-2 py-0.5 text-[11px] font-semibold shadow-md pointer-events-auto gap-2">
+        <div className="absolute -top-7 left-0 z-50 flex items-center bg-indigo-600 text-white rounded px-2 py-0.5 text-[11px] font-semibold shadow-lg pointer-events-auto gap-2 select-none">
+          <GripVertical className="w-3 h-3 text-indigo-300 cursor-grab" />
           <span>{node.name || node.type}</span>
           <div className="flex items-center gap-1 border-l border-indigo-400 pl-1.5">
             <button

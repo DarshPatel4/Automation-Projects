@@ -17,3 +17,4 @@ class TemplateSerializer(serializers.ModelSerializer):
             'description', 'thumbnail', 'theme_config', 'template_nodes',
             'is_premium', 'created_at'
         ]
+

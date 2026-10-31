@@ -4,3 +4,4 @@ from .views import AISynthesizeSectionView
 urlpatterns = [
     path('synthesize/', AISynthesizeSectionView.as_view(), name='ai-synthesize'),
 ]
+

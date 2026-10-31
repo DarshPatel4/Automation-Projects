@@ -3,6 +3,7 @@
 import React from 'react';
 import { useEditorStore } from '../../stores/editorStore';
 import { ComponentStyle } from '../../types/builder';
+import { availableIcons } from '../ui/LucideIcon';
 import {
   SlidersHorizontal,
   Type,
@@ -16,6 +17,7 @@ import {
   Layers,
   ArrowRight,
   Square,
+  ShieldCheck,
 } from 'lucide-react';
 
 export const RightSidebar: React.FC = () => {
@@ -220,6 +222,65 @@ export const RightSidebar: React.FC = () => {
                 />
               </div>
             </>
+          )}
+
+          {/* Icon Props */}
+          {node.type === 'Icon' && (
+            <div className="space-y-3">
+              <div>
+                <label className="text-slate-600 dark:text-slate-300 font-medium block mb-1">
+                  Vector Icon Name
+                </label>
+                <select
+                  value={node.props?.iconName || 'Layers'}
+                  onChange={(e) => updateNodeProps(node.id, { iconName: e.target.value })}
+                  className="w-full p-2 border rounded-md dark:bg-slate-800 dark:border-slate-700 outline-none"
+                >
+                  {availableIcons.map((ic) => (
+                    <option key={ic} value={ic}>
+                      {ic}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-slate-600 dark:text-slate-300 font-medium block mb-1">
+                  Icon Color
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    value={node.props?.color || '#ffffff'}
+                    onChange={(e) => updateNodeProps(node.id, { color: e.target.value })}
+                    className="w-8 h-8 rounded border cursor-pointer p-0.5"
+                  />
+                  <input
+                    type="text"
+                    value={node.props?.color || '#ffffff'}
+                    onChange={(e) => updateNodeProps(node.id, { color: e.target.value })}
+                    className="flex-1 p-1.5 border rounded dark:bg-slate-800 dark:border-slate-700 font-mono"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <div className="flex justify-between mb-1">
+                  <label className="text-slate-600 dark:text-slate-300 font-medium">
+                    Icon Size
+                  </label>
+                  <span className="font-mono text-slate-400">{node.props?.size || 20}px</span>
+                </div>
+                <input
+                  type="range"
+                  min="12"
+                  max="64"
+                  value={node.props?.size || 20}
+                  onChange={(e) => updateNodeProps(node.id, { size: Number(e.target.value) })}
+                  className="w-full accent-indigo-600"
+                />
+              </div>
+            </div>
           )}
         </div>
 
@@ -590,3 +651,4 @@ export const RightSidebar: React.FC = () => {
     </aside>
   );
 };
+

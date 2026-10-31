@@ -56,3 +56,4 @@ htmlcov/
 # Celery & Redis
 celerybeat-schedule
 celerybeat.pid
+

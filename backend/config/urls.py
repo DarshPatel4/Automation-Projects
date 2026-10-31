@@ -7,3 +7,4 @@ urlpatterns = [
     path('api/templates/', include('apps.templates.urls')),
     path('api/ai/', include('apps.ai_generator.urls')),
 ]
+

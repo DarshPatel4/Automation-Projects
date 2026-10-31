@@ -101,3 +101,4 @@ REST_FRAMEWORK = {
 # CORS Configuration for local Next.js frontend
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
+

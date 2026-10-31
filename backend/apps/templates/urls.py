@@ -9,3 +9,4 @@ router.register(r'categories', TemplateCategoryViewSet, basename='template-categ
 urlpatterns = [
     path('', include(router.urls)),
 ]
+

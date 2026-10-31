@@ -9,3 +9,4 @@ router.register(r'pages', PageViewSet, basename='page')
 urlpatterns = [
     path('', include(router.urls)),
 ]
+

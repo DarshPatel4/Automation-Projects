@@ -189,3 +189,4 @@ class AISynthesizeSectionView(APIView):
             'root_section_id': section_id,
             'nodes': nodes
         }, status=status.HTTP_200_OK)
+

@@ -129,3 +129,4 @@ export interface WebsiteProject {
   published: boolean;
   publishedAt?: string;
 }
+

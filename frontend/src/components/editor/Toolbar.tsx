@@ -19,6 +19,7 @@ import {
   Check,
   ExternalLink,
   Sparkles,
+  Layers,
 } from 'lucide-react';
 
 export const Toolbar: React.FC = () => {
@@ -69,15 +70,15 @@ export const Toolbar: React.FC = () => {
         {/* Left: Brand & Page Selector */}
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 pr-3 border-r border-slate-200 dark:border-slate-800">
-            <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold text-base shadow-sm">
-              ▲
+            <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold shadow-md shadow-indigo-600/30">
+              <Layers className="w-4 h-4 text-white" />
             </div>
             <div>
               <span className="font-bold text-sm tracking-tight text-slate-800 dark:text-slate-100 block leading-tight">
-                ApexBuilder
+                Nexus Studio
               </span>
               <span className="text-[10px] text-indigo-600 dark:text-indigo-400 font-semibold uppercase tracking-wider">
-                SaaS Studio
+                Visual Platform
               </span>
             </div>
           </div>
@@ -359,3 +360,4 @@ export const Toolbar: React.FC = () => {
     </>
   );
 };
+
