@@ -115,12 +115,25 @@ export interface GlobalTheme {
   borderRadius: string;
 }
 
+export interface Workspace {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  icon?: string;
+  color?: string;
+  websitesCount?: number;
+  createdAt?: string;
+}
+
 export interface WebsiteProject {
   id: string;
   name: string;
   slug: string;
   subdomain?: string;
   customDomain?: string;
+  workspaceId?: string;
+  workspaceName?: string;
   theme: GlobalTheme;
   pages: PageDocument[];
   activePageId: string;
@@ -129,4 +142,16 @@ export interface WebsiteProject {
   published: boolean;
   publishedAt?: string;
 }
+
+export interface WebsiteTemplate {
+  id: string;
+  name: string;
+  slug: string;
+  category: string;
+  description: string;
+  thumbnailUrl: string;
+  tags: string[];
+  projectData: Partial<WebsiteProject>;
+}
+
 

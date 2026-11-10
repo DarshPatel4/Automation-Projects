@@ -4,9 +4,28 @@ from django.contrib.auth import get_user_model
 
 User = get_user_model()
 
+class Workspace(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='workspaces', null=True, blank=True)
+    name = models.CharField(max_length=255)
+    slug = models.SlugField(max_length=255)
+    description = models.TextField(blank=True, default='')
+    icon = models.CharField(max_length=50, default='Folder')
+    color = models.CharField(max_length=50, default='#6366f1')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name
+
+
 class Website(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='websites', null=True, blank=True)
+    workspace = models.ForeignKey(Workspace, on_delete=models.SET_NULL, null=True, blank=True, related_name='websites')
     name = models.CharField(max_length=255)
     slug = models.SlugField(max_length=255)
     subdomain = models.CharField(max_length=100, unique=True)
@@ -45,4 +64,3 @@ class Page(models.Model):
 
     def __str__(self):
         return f"{self.website.name} - {self.title} ({self.slug})"
-

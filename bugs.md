@@ -66,5 +66,6 @@ Explanation of the fix and associated commit/file changes.
 
 | Bug ID | Date Resolved | Module | Summary | Resolution Notes |
 | :--- | :--- | :--- | :--- | :--- |
-| - | - | - | - | - |
+| BUG-001 | 2026-11-10 | Dev Environment / Git | Duplicate repository (`DARSH PATEL master*`) and 10k+ changes showing in VS Code | Safely removed root `.git` at `C:\Users\DARSH PATEL\.git`, configured `git.ignoredRepositories: ["C:\\Users\\DARSH PATEL"]` in `.vscode/settings.json` and workspace settings. |
+
 

@@ -8,9 +8,9 @@ This document tracks all features planned, currently in development, and impleme
 
 | Status Indicator | Meaning | Count |
 | :--- | :--- | :---: |
-| 🟢 **Implemented** | Built, verified, and available in the current codebase | **28** |
-| 🟡 **In Progress** | Currently under active development | **4** |
-| 🔵 **Planned** | Detailed in specification, scheduled for implementation | **32** |
+| 🟢 **Implemented** | Built, verified, and available in the current codebase | **33** |
+| 🟡 **In Progress** | Currently under active development | **2** |
+| 🔵 **Planned** | Detailed in specification, scheduled for implementation | **30** |
 | ⚪ **Backlog** | Future enhancement candidate | **15** |
 
 ---
@@ -35,6 +35,9 @@ This document tracks all features planned, currently in development, and impleme
 | DASH-002 | Create Website Options | Choice of starting from Blank, Template, or AI Prompt | 🟢 Implemented | Phase 1 |
 | DASH-003 | Project Duplicate & Clone | Clone existing projects with all pages and asset links | 🟢 Implemented | Phase 1 |
 | DASH-004 | Project Search & Filter | In-dashboard instant search by site name and status | 🟢 Implemented | Phase 1 |
+| WS-001 | Workspace Folders Model & API | Django Workspace model with custom icons, colors, website relations | 🟢 Implemented | Phase 1 |
+| WS-002 | Workspace Categorization UI | Create folders, filter websites by folder, and move sites between folders | 🟢 Implemented | Phase 1 |
+| TMPL-001 | Unified Website Creation Wizard | 2-step creation flow for Blank vs Templates with Workspace target | 🟢 Implemented | Phase 1 |
 | DASH-005 | Storage & Plan Quota Usage | Real-time usage indicators for assets and active sites | 🔵 Planned | Phase 2 |
 
 ---
@@ -46,13 +49,15 @@ This document tracks all features planned, currently in development, and impleme
 | DND-002 | Sidebar Component Insertion | 1-click insertion into selected container or root with defaults | 🟢 Implemented | Phase 1 |
 | DND-003 | In-Canvas Reordering | Reorder siblings and move elements across parent containers | 🟢 Implemented | Phase 1 |
 | DND-004 | Element Selection & Actions | Highlight active element, badge floating controls (duplicate/delete) | 🟢 Implemented | Phase 1 |
-| DND-005 | Transform & Resize Handles | 8-point interactive resize handles with aspect ratio lock | 🔵 Planned | Phase 2 |
+| DND-005 | Transform & Resize Handles | 8-point Canva-style bounding box handles with aspect ratio lock | 🟢 Implemented | Phase 1 |
 | DND-006 | Rulers & Smart Guides | Distance measurement markers and snap-to-grid alignment guides | 🔵 Planned | Phase 2 |
 | DND-007 | Undo / Redo History Stack | 40-step immutable state snapshot stack with keyboard shortcut bindings | 🟢 Implemented | Phase 1 |
-| DND-008 | Keyboard Shortcuts Engine | Copy (`Ctrl+C`), Paste (`Ctrl+V`), Undo (`Ctrl+Z`), Redo (`Ctrl+Y`) | 🟢 Implemented | Phase 1 |
+| DND-008 | Keyboard Shortcuts Engine | Copy (`Ctrl+C`), Paste (`Ctrl+V`), Undo (`Ctrl+Z`), Redo (`Ctrl+Y`), `?` modal | 🟢 Implemented | Phase 1 |
 | DND-009 | Breadcrumbs Hierarchy Bar | Live bottom breadcrumbs allowing easy traversal to parent nodes | 🟢 Implemented | Phase 1 |
 | DND-010 | Sidebar-to-Canvas Drag & Drop | Drag elements from catalog directly into sections/containers | 🟢 Implemented | Phase 1 |
 | DND-011 | In-Canvas Node Drag & Reparenting | Drag on-canvas nodes to reorder or move across containers | 🟢 Implemented | Phase 1 |
+| DND-012 | Arrow Keys Movement & Nudging | 1px nudge, 10px Shift nudge, Ctrl+Arrow sibling reordering, HUD pill | 🟢 Implemented | Phase 1 |
+| DND-013 | Canva Floating Contextual Bar | Floating action bar on selected element (Move, Nudge, Lock, Duplicate, Delete) | 🟢 Implemented | Phase 1 |
 
 ---
 

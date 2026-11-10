@@ -13,6 +13,8 @@ interface EditorState {
   activeLeftTab: 'elements' | 'layers' | 'pages' | 'theme' | 'templates' | 'ai' | 'code';
   activeStyleTab: 'layout' | 'style' | 'typography' | 'spacing' | 'advanced';
   saveStatus: 'saved' | 'saving' | 'unsaved';
+  nudgeInfo: { text: string; visible: boolean } | null;
+  showShortcutsModal: boolean;
 
   // History for Undo / Redo
   history: Record<string, ComponentNode>[];
@@ -24,6 +26,8 @@ interface EditorState {
   setBreakpoint: (bp: Breakpoint) => void;
   setZoom: (zoom: number | ((prev: number) => number)) => void;
   togglePreview: () => void;
+  toggleShortcutsModal: () => void;
+  setNudgeInfo: (info: { text: string; visible: boolean } | null) => void;
   setActiveLeftTab: (tab: EditorState['activeLeftTab']) => void;
   setActiveStyleTab: (tab: EditorState['activeStyleTab']) => void;
 
@@ -38,7 +42,9 @@ interface EditorState {
   deleteNode: (nodeId: string) => void;
   duplicateNode: (nodeId: string) => string | null;
   reorderChildren: (parentId: string, startIndex: number, endIndex: number) => void;
+  reorderSibling: (nodeId: string, direction: 'prev' | 'next') => void;
   moveNode: (nodeId: string, newParentId: string, targetIndex?: number) => void;
+  nudgeNode: (nodeId: string, direction: 'up' | 'down' | 'left' | 'right', step: number) => void;
 
   // Theme & Pages
   updateTheme: (newTheme: Partial<GlobalTheme>) => void;
@@ -64,6 +70,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   activeLeftTab: 'elements',
   activeStyleTab: 'style',
   saveStatus: 'saved',
+  nudgeInfo: null,
+  showShortcutsModal: false,
 
   history: [defaultProject.pages[0].nodes],
   historyIndex: 0,
@@ -75,6 +83,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     zoom: Math.min(200, Math.max(25, typeof zoomOrFn === 'function' ? zoomOrFn(state.zoom) : zoomOrFn)),
   })),
   togglePreview: () => set((state) => ({ previewMode: !state.previewMode, selectedNodeId: null })),
+  toggleShortcutsModal: () => set((state) => ({ showShortcutsModal: !state.showShortcutsModal })),
+  setNudgeInfo: (info) => set({ nudgeInfo: info }),
   setActiveLeftTab: (tab) => set({ activeLeftTab: tab }),
   setActiveStyleTab: (tab) => set({ activeStyleTab: tab }),
 
@@ -399,6 +409,143 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     );
 
     set({ project: { ...project, pages: updatedPages }, selectedNodeId: nodeId });
+    get().pushHistory(newNodes);
+  },
+
+  reorderSibling: (nodeId, direction) => {
+    const { project } = get();
+    if (nodeId === 'root') return;
+    const activePage = project.pages.find((p) => p.id === project.activePageId);
+    if (!activePage || !activePage.nodes[nodeId]) return;
+
+    const node = activePage.nodes[nodeId];
+    const parentId = node.parentId;
+    if (!parentId || !activePage.nodes[parentId]) return;
+
+    const parent = activePage.nodes[parentId];
+    const children = [...parent.children];
+    const currentIndex = children.indexOf(nodeId);
+    if (currentIndex === -1) return;
+
+    const targetIndex = direction === 'prev' ? currentIndex - 1 : currentIndex + 1;
+    if (targetIndex < 0 || targetIndex >= children.length) return;
+
+    const [moved] = children.splice(currentIndex, 1);
+    children.splice(targetIndex, 0, moved);
+
+    const newNodes = {
+      ...activePage.nodes,
+      [parentId]: { ...parent, children },
+    };
+
+    const updatedPages = project.pages.map((p) =>
+      p.id === activePage.id ? { ...p, nodes: newNodes } : p
+    );
+
+    const hudText = direction === 'prev'
+      ? `▲ Moved Up (${targetIndex + 1} of ${children.length})`
+      : `▼ Moved Down (${targetIndex + 1} of ${children.length})`;
+
+    set({
+      project: { ...project, pages: updatedPages },
+      nudgeInfo: { text: hudText, visible: true },
+    });
+    get().pushHistory(newNodes);
+  },
+
+  nudgeNode: (nodeId, direction, step) => {
+    const { project, activeBreakpoint } = get();
+    if (nodeId === 'root') return;
+    const activePage = project.pages.find((p) => p.id === project.activePageId);
+    if (!activePage || !activePage.nodes[nodeId]) return;
+
+    const node = activePage.nodes[nodeId];
+    const isDesktop = activeBreakpoint === 'desktop';
+    const currentStyles = isDesktop
+      ? (node.styles.base || {})
+      : { ...(node.styles.base || {}), ...(node.styles.responsive?.[activeBreakpoint] || {}) };
+
+    let hudText = '';
+    const updatedStyles: Partial<ComponentStyle> = {};
+
+    if (currentStyles.position === 'absolute' || currentStyles.position === 'fixed') {
+      const currentTop = parseInt(currentStyles.top || '0', 10);
+      const currentLeft = parseInt(currentStyles.left || '0', 10);
+
+      if (direction === 'up') {
+        const next = currentTop - step;
+        updatedStyles.top = `${next}px`;
+        hudText = `▲ Position Top: ${next}px`;
+      } else if (direction === 'down') {
+        const next = currentTop + step;
+        updatedStyles.top = `${next}px`;
+        hudText = `▼ Position Top: ${next}px`;
+      } else if (direction === 'left') {
+        const next = currentLeft - step;
+        updatedStyles.left = `${next}px`;
+        hudText = `◄ Position Left: ${next}px`;
+      } else if (direction === 'right') {
+        const next = currentLeft + step;
+        updatedStyles.left = `${next}px`;
+        hudText = `► Position Left: ${next}px`;
+      }
+    } else {
+      const currentMargin = currentStyles.margin || {};
+      const currentTop = parseInt(currentMargin.top || '0', 10);
+      const currentLeft = parseInt(currentMargin.left || '0', 10);
+
+      if (direction === 'up') {
+        const next = currentTop - step;
+        updatedStyles.margin = { ...currentMargin, top: `${next}px` };
+        hudText = `▲ Margin-Top: ${next}px`;
+      } else if (direction === 'down') {
+        const next = currentTop + step;
+        updatedStyles.margin = { ...currentMargin, top: `${next}px` };
+        hudText = `▼ Margin-Top: ${next}px`;
+      } else if (direction === 'left') {
+        const next = currentLeft - step;
+        updatedStyles.margin = { ...currentMargin, left: `${next}px` };
+        hudText = `◄ Margin-Left: ${next}px`;
+      } else if (direction === 'right') {
+        const next = currentLeft + step;
+        updatedStyles.margin = { ...currentMargin, left: `${next}px` };
+        hudText = `► Margin-Left: ${next}px`;
+      }
+    }
+
+    const newNodes = { ...activePage.nodes };
+    if (isDesktop) {
+      newNodes[nodeId] = {
+        ...node,
+        styles: {
+          ...node.styles,
+          base: { ...node.styles.base, ...updatedStyles },
+        },
+      };
+    } else {
+      newNodes[nodeId] = {
+        ...node,
+        styles: {
+          ...node.styles,
+          responsive: {
+            ...node.styles.responsive,
+            [activeBreakpoint]: {
+              ...(node.styles.responsive?.[activeBreakpoint] || {}),
+              ...updatedStyles,
+            },
+          },
+        },
+      };
+    }
+
+    const updatedPages = project.pages.map((p) =>
+      p.id === activePage.id ? { ...p, nodes: newNodes } : p
+    );
+
+    set({
+      project: { ...project, pages: updatedPages },
+      nudgeInfo: { text: hudText, visible: true },
+    });
     get().pushHistory(newNodes);
   },
 

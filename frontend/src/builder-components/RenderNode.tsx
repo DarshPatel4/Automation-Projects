@@ -5,7 +5,7 @@ import { useEditorStore } from '../stores/editorStore';
 import { ComponentNode, Breakpoint, ComponentStyle } from '../types/builder';
 import { LucideIcon } from '../components/ui/LucideIcon';
 import { cn } from '../utils/cn';
-import { Plus, Trash2, Copy, GripVertical } from 'lucide-react';
+import { Plus, Trash2, Copy, GripVertical, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Lock, Unlock } from 'lucide-react';
 
 interface RenderNodeProps {
   nodeId: string;
@@ -25,6 +25,9 @@ export const RenderNode: React.FC<RenderNodeProps> = ({ nodeId }) => {
   const updateNodeProps = useEditorStore((s) => s.updateNodeProps);
   const addNode = useEditorStore((s) => s.addNode);
   const moveNode = useEditorStore((s) => s.moveNode);
+  const reorderSibling = useEditorStore((s) => s.reorderSibling);
+  const toggleLock = useEditorStore((s) => s.toggleLock);
+  const nudgeNode = useEditorStore((s) => s.nudgeNode);
 
   const [isDragOver, setIsDragOver] = useState(false);
 
@@ -347,36 +350,123 @@ export const RenderNode: React.FC<RenderNodeProps> = ({ nodeId }) => {
         isDragOver && 'ring-2 ring-indigo-400 bg-indigo-950/20'
       )}
     >
-      {/* Floating Action Badge for Selected Node */}
+      {/* Canva-Style Selection Bounding Box & 8-point handles */}
       {isSelected && (
-        <div className="absolute -top-7 left-0 z-50 flex items-center bg-indigo-600 text-white rounded px-2 py-0.5 text-[11px] font-semibold shadow-lg pointer-events-auto gap-2 select-none">
-          <GripVertical className="w-3 h-3 text-indigo-300 cursor-grab" />
-          <span>{node.name || node.type}</span>
-          <div className="flex items-center gap-1 border-l border-indigo-400 pl-1.5">
+        <>
+          {/* Corner handles */}
+          <div className="absolute -top-1.5 -left-1.5 w-3 h-3 bg-white border-2 border-indigo-600 rounded-full shadow-md z-30 pointer-events-none" />
+          <div className="absolute -top-1.5 -right-1.5 w-3 h-3 bg-white border-2 border-indigo-600 rounded-full shadow-md z-30 pointer-events-none" />
+          <div className="absolute -bottom-1.5 -left-1.5 w-3 h-3 bg-white border-2 border-indigo-600 rounded-full shadow-md z-30 pointer-events-none" />
+          <div className="absolute -bottom-1.5 -right-1.5 w-3 h-3 bg-white border-2 border-indigo-600 rounded-full shadow-md z-30 pointer-events-none" />
+
+          {/* Canva Floating Contextual Action Bar */}
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="absolute -top-10 left-1/2 -translate-x-1/2 z-50 flex items-center bg-slate-900 text-white rounded-lg px-2 py-1 text-[11px] font-semibold shadow-2xl border border-slate-700/80 pointer-events-auto gap-1.5 select-none whitespace-nowrap animate-in fade-in zoom-in-95 duration-100"
+          >
+            <div className="flex items-center gap-1 text-slate-400 font-mono text-[10px] pr-1.5 border-r border-slate-700">
+              <GripVertical className="w-3.5 h-3.5 text-indigo-400 cursor-grab" />
+              <span className="text-white font-sans font-medium">{node.name || node.type}</span>
+            </div>
+
+            {/* Reorder Sibling Up / Down (Canva layer position) */}
+            {nodeId !== 'root' && (
+              <div className="flex items-center gap-0.5 pr-1 border-r border-slate-700">
+                <button
+                  type="button"
+                  title="Move Up (Ctrl+↑)"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    reorderSibling(nodeId, 'prev');
+                  }}
+                  className="p-1 hover:bg-slate-800 rounded text-slate-300 hover:text-white transition-colors"
+                >
+                  <ArrowUp className="w-3 h-3" />
+                </button>
+                <button
+                  type="button"
+                  title="Move Down (Ctrl+↓)"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    reorderSibling(nodeId, 'next');
+                  }}
+                  className="p-1 hover:bg-slate-800 rounded text-slate-300 hover:text-white transition-colors"
+                >
+                  <ArrowDown className="w-3 h-3" />
+                </button>
+              </div>
+            )}
+
+            {/* Quick Nudge Arrows */}
+            {nodeId !== 'root' && (
+              <div className="hidden sm:flex items-center gap-0.5 pr-1 border-r border-slate-700">
+                <button
+                  type="button"
+                  title="Nudge Left (← / Shift+← for 10px)"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    nudgeNode(nodeId, 'left', 5);
+                  }}
+                  className="p-1 hover:bg-slate-800 rounded text-slate-300 hover:text-white transition-colors"
+                >
+                  <ArrowLeft className="w-3 h-3" />
+                </button>
+                <button
+                  type="button"
+                  title="Nudge Right (→ / Shift+→ for 10px)"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    nudgeNode(nodeId, 'right', 5);
+                  }}
+                  className="p-1 hover:bg-slate-800 rounded text-slate-300 hover:text-white transition-colors"
+                >
+                  <ArrowRight className="w-3 h-3" />
+                </button>
+              </div>
+            )}
+
+            {/* Lock / Unlock */}
             <button
-              title="Duplicate"
+              type="button"
+              title={node.locked ? 'Unlock Element' : 'Lock Element'}
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleLock(nodeId);
+              }}
+              className="p-1 hover:bg-slate-800 rounded text-slate-300 hover:text-white transition-colors"
+            >
+              {node.locked ? <Lock className="w-3 h-3 text-amber-400" /> : <Unlock className="w-3 h-3" />}
+            </button>
+
+            {/* Duplicate */}
+            <button
+              type="button"
+              title="Duplicate (Ctrl+D)"
               onClick={(e) => {
                 e.stopPropagation();
                 duplicateNode(nodeId);
               }}
-              className="hover:text-indigo-200"
+              className="p-1 hover:bg-slate-800 rounded text-slate-300 hover:text-white transition-colors"
             >
               <Copy className="w-3 h-3" />
             </button>
+
+            {/* Delete */}
             {nodeId !== 'root' && (
               <button
-                title="Delete"
+                type="button"
+                title="Delete (Del)"
                 onClick={(e) => {
                   e.stopPropagation();
                   deleteNode(nodeId);
                 }}
-                className="hover:text-red-300"
+                className="p-1 hover:bg-red-950/60 rounded text-red-400 hover:text-red-300 transition-colors"
               >
                 <Trash2 className="w-3 h-3" />
               </button>
             )}
           </div>
-        </div>
+        </>
       )}
 
       {renderContent()}

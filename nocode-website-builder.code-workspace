@@ -7,6 +7,10 @@
   ],
   "settings": {
     "window.title": "nocode-website-builder - ${dirty}${activeEditorShort}${separator}${rootName}",
-    "git.autorefresh": true
+    "git.autorefresh": true,
+    "git.autoRepositoryDetection": "subFolders",
+    "git.ignoredRepositories": [
+      "C:\\Users\\DARSH PATEL"
+    ]
   }
 }
