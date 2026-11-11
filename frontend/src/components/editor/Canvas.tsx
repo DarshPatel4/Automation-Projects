@@ -4,7 +4,7 @@ import React, { useEffect } from 'react';
 import { useEditorStore } from '../../stores/editorStore';
 import { ComponentNode } from '../../types/builder';
 import { RenderNode } from '../../builder-components/RenderNode';
-import { ChevronRight, Keyboard, X, Move, Layers, Copy, Trash2, Undo2, Redo2, HelpCircle } from 'lucide-react';
+import { ChevronRight, Keyboard, X, Move, Layers, Copy, Trash2, Undo2, Redo2, HelpCircle, Zap } from 'lucide-react';
 
 export const Canvas: React.FC = () => {
   const activeBreakpoint = useEditorStore((s) => s.activeBreakpoint);
@@ -19,6 +19,9 @@ export const Canvas: React.FC = () => {
   const nudgeInfo = useEditorStore((s) => s.nudgeInfo);
   const showShortcutsModal = useEditorStore((s) => s.showShortcutsModal);
   const toggleShortcutsModal = useEditorStore((s) => s.toggleShortcutsModal);
+  const activeToast = useEditorStore((s) => s.activeToast);
+  const activeModal = useEditorStore((s) => s.activeModal);
+  const setActiveModal = useEditorStore((s) => s.setActiveModal);
   const nodes = useEditorStore((s) => s.getActivePageNodes());
   const project = useEditorStore((s) => s.project);
 
@@ -373,6 +376,50 @@ export const Canvas: React.FC = () => {
                 className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-xs rounded-lg transition-colors shadow-sm"
               >
                 Got It
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Runtime Action Feedback Toast */}
+      {activeToast && (
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-4 py-3 rounded-xl bg-slate-900/95 text-white shadow-2xl border border-slate-700 backdrop-blur-md animate-in slide-in-from-bottom-4 duration-200">
+          <Zap className="w-4 h-4 text-amber-400 flex-shrink-0" />
+          <span className="text-xs font-semibold">{activeToast.title}</span>
+        </div>
+      )}
+
+      {/* Runtime Action Modal Dialog */}
+      {activeModal && (
+        <div
+          className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in"
+          onClick={() => setActiveModal(null)}
+        >
+          <div
+            className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 max-w-md w-full overflow-hidden animate-in zoom-in-95 duration-150"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800">
+              <h3 className="font-bold text-slate-900 dark:text-white text-base">
+                {activeModal.title}
+              </h3>
+              <button
+                onClick={() => setActiveModal(null)}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="p-6 text-xs text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-wrap">
+              {activeModal.content}
+            </div>
+            <div className="px-6 py-3 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-800 text-right">
+              <button
+                onClick={() => setActiveModal(null)}
+                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-xs rounded-lg transition-colors shadow-sm"
+              >
+                Close Dialog
               </button>
             </div>
           </div>

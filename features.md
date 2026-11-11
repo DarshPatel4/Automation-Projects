@@ -8,9 +8,9 @@ This document tracks all features planned, currently in development, and impleme
 
 | Status Indicator | Meaning | Count |
 | :--- | :--- | :---: |
-| 🟢 **Implemented** | Built, verified, and available in the current codebase | **33** |
-| 🟡 **In Progress** | Currently under active development | **2** |
-| 🔵 **Planned** | Detailed in specification, scheduled for implementation | **30** |
+| 🟢 **Implemented** | Built, verified, and available in the current codebase | **43** |
+| 🟡 **In Progress** | Currently under active development | **0** |
+| 🔵 **Planned** | Detailed in specification, scheduled for implementation | **22** |
 | ⚪ **Backlog** | Future enhancement candidate | **15** |
 
 ---
@@ -121,6 +121,17 @@ This document tracks all features planned, currently in development, and impleme
 
 ---
 
+### Module 8: Storage & Inbuilt Database Engine
+| Feature ID | Feature Name | Description | Status | Added / Target |
+| :--- | :--- | :--- | :---: | :--- |
+| STOR-001 | Centralized Storage Hub Page | Dedicated `/storage` dashboard for all workspaces, projects, and media vault | 🟢 Implemented | Phase 1 |
+| STOR-002 | Storage Nav Icon & Header Link | Global `HardDrive` icon in top navigation across Dashboard, Editor, and Templates | 🟢 Implemented | Phase 1 |
+| DB-001 | Static vs Dynamic Architecture Selector | Wizard asks user to choose Static (View-Only / 0 DB) vs Responsive (With DB) | 🟢 Implemented | Phase 1 |
+| DB-002 | Inbuilt Database Configuration | Managed SQLite auto-provisioning with live latency & health test action | 🟢 Implemented | Phase 1 |
+| CMS-001 | In-Studio Database & CMS Manager | Left sidebar panel for database settings, collections builder, and data binding | 🟢 Implemented | Phase 1 |
+
+---
+
 ### Module 9: Backend Modular Monolith
 | Feature ID | Feature Name | Description | Status | Added / Target |
 | :--- | :--- | :--- | :---: | :--- |
@@ -128,6 +139,17 @@ This document tracks all features planned, currently in development, and impleme
 | BK-002 | Websites & Pages API | Full REST API with JSONField component trees and publish action | 🟢 Implemented | Phase 1 |
 | BK-003 | Templates Marketplace API | Category-filtered template catalog API endpoints | 🟢 Implemented | Phase 1 |
 | BK-004 | AI Generator API | Natural language prompt synthesis endpoint | 🟢 Implemented | Phase 1 |
+
+---
+
+### Module 10: Click Actions, Workflows & Design Systems
+| Feature ID | Feature Name | Description | Status | Added / Target |
+| :--- | :--- | :--- | :---: | :--- |
+| ACT-001 | Click Actions & Workflows Inspector | Configure actions on buttons, icons, links, and cards (Page, Webhook, Anchor, Modal, CMS, Cart) | 🟢 Implemented | Phase 1 |
+| ACT-002 | Inline New Page Setup Workflow | Setup, name, slug, and template new pages directly within the Action Configurator | 🟢 Implemented | Phase 1 |
+| ACT-003 | Live Action Execution Runtime | Interactive preview execution with feedback toasts, live webhook test requests, dialog modals | 🟢 Implemented | Phase 1 |
+| DSGN-002 | Curated Human Design Presets | 5 luxury architectural palettes (Obsidian, Swiss, Editorial, Emerald, Nordic) replacing AI purple | 🟢 Implemented | Phase 1 |
+| NAV-001 | Studio Pages & Navigation Manager | Left sidebar pages tab to view, switch, create, and delete website pages | 🟢 Implemented | Phase 1 |
 
 ---
 
@@ -141,3 +163,12 @@ This document tracks all features planned, currently in development, and impleme
 | 2026-11-01 | FE-003 | Layers Hierarchy & Global Design System | Antigravity | Interactive tree view, lock/hide/duplicate, theme tokens |
 | 2026-11-01 | FE-004 | Dashboard & Template Marketplace Pages | Antigravity | Next.js App Router dashboard, templates gallery, auth screens |
 | 2026-11-01 | BK-001 | Django Modular Monolith Setup | Antigravity | Websites, Pages, Templates, and AI Generator backend modules |
+| 2026-11-10 | DND-012 | Arrow Key Canvas Movement & Nudging | Antigravity | 1px nudge, 10px Shift nudge, Ctrl+Arrow sibling reordering, HUD pill |
+| 2026-11-10 | WS-001 | Workspaces (Folder Categorization) | Antigravity | Backend model, migrations, endpoints, and Dashboard folders UI |
+| 2026-11-10 | STOR-001 | Centralized Storage Hub Page (`/storage`) | Antigravity | Workspaces inventory, project weights, and media assets vault |
+| 2026-11-10 | DB-001 | Static vs Dynamic (With DB) Architecture | Antigravity | Creation wizard selector + inbuilt managed SQLite DB configuration |
+| 2026-11-10 | CMS-001 | In-Studio Database & CMS Panel | Antigravity | Left sidebar database settings, live connection test, and CMS collections |
+| 2026-11-11 | ACT-001 | Interactive Click Actions & Workflows | Antigravity | Inspector actions panel for buttons/icons: Page navigation, Webhook, Anchor, Modal, CMS |
+| 2026-11-11 | ACT-002 | Inline New Page Setup Workflow | Antigravity | Direct page creation and linking inside action configurator |
+| 2026-11-11 | DSGN-002 | 5 Human-Crafted Design Presets | Antigravity | Replaced generic AI purple with Obsidian Carbon, Swiss Minimal, Warm Editorial, Supabase Emerald, Nordic Arctic |
+| 2026-11-11 | NAV-001 | Studio Pages & Navigation Manager | Antigravity | Left sidebar pages manager for multi-page visual site architecture |

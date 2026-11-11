@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { useEditorStore } from '../../stores/editorStore';
 import {
   Monitor,
@@ -20,6 +21,9 @@ import {
   ExternalLink,
   Sparkles,
   Layers,
+  HardDrive,
+  Database,
+  ArrowLeft,
 } from 'lucide-react';
 
 export const Toolbar: React.FC = () => {
@@ -43,6 +47,7 @@ export const Toolbar: React.FC = () => {
   const [showPublishModal, setShowPublishModal] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
   const [newPageTitle, setNewPageTitle] = useState('');
+  const [newPageTemplate, setNewPageTemplate] = useState<'blank' | 'about' | 'contact' | 'pricing'>('about');
   const [showAddPageDialog, setShowAddPageDialog] = useState(false);
 
   const canUndo = historyIndex > 0;
@@ -69,7 +74,11 @@ export const Toolbar: React.FC = () => {
       <header className="h-14 border-b border-slate-200 bg-white dark:bg-slate-900 dark:border-slate-800 flex items-center justify-between px-4 z-40 select-none shadow-sm">
         {/* Left: Brand & Page Selector */}
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 pr-3 border-r border-slate-200 dark:border-slate-800">
+          <Link
+            href="/dashboard"
+            className="flex items-center gap-2 pr-3 border-r border-slate-200 dark:border-slate-800 hover:opacity-80 transition-opacity"
+            title="Return to Dashboard & Workspaces"
+          >
             <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold shadow-md shadow-indigo-600/30">
               <Layers className="w-4 h-4 text-white" />
             </div>
@@ -81,13 +90,34 @@ export const Toolbar: React.FC = () => {
                 Visual Platform
               </span>
             </div>
-          </div>
+          </Link>
 
-          {/* Project Name & Page Dropdown */}
+          {/* Project Name, Type Badge & Storage link */}
           <div className="flex items-center gap-2">
             <span className="text-xs font-medium text-slate-500 max-w-[120px] truncate hidden md:inline">
               {project.name}
             </span>
+
+            {/* Architecture Badge */}
+            {project.siteType === 'dynamic' ? (
+              <span className="hidden sm:inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-100 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
+                <Database className="w-2.5 h-2.5 text-purple-600" />
+                DB
+              </span>
+            ) : (
+              <span className="hidden sm:inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                Static
+              </span>
+            )}
+
+            <Link
+              href="/storage"
+              className="p-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 hover:text-indigo-600 transition-colors"
+              title="Storage Hub & Assets"
+            >
+              <HardDrive className="w-3.5 h-3.5" />
+            </Link>
+
             <span className="text-slate-300 dark:text-slate-700">/</span>
 
             <select
@@ -259,15 +289,38 @@ export const Toolbar: React.FC = () => {
               Create New Page
             </h3>
             <p className="text-xs text-slate-500 mb-4">
-              Add a new blank page to your project with clean canvas.
+              Add a new page to your site with pre-built architectural layout or blank canvas.
             </p>
-            <input
-              type="text"
-              placeholder="e.g. About Us, Contact, Blog"
-              value={newPageTitle}
-              onChange={(e) => setNewPageTitle(e.target.value)}
-              className="w-full text-sm px-3 py-2 border rounded-lg mb-4 dark:bg-slate-800 dark:border-slate-700 outline-none focus:border-indigo-500"
-            />
+            <div className="space-y-3 mb-4">
+              <div>
+                <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 block mb-1">
+                  Page Title
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. About Us, Contact, Pricing"
+                  value={newPageTitle}
+                  onChange={(e) => setNewPageTitle(e.target.value)}
+                  className="w-full text-xs px-3 py-2 border rounded-lg dark:bg-slate-800 dark:border-slate-700 outline-none focus:border-indigo-500 text-slate-900 dark:text-white"
+                />
+              </div>
+
+              <div>
+                <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 block mb-1">
+                  Layout Template
+                </label>
+                <select
+                  value={newPageTemplate}
+                  onChange={(e) => setNewPageTemplate(e.target.value as any)}
+                  className="w-full text-xs px-3 py-2 border rounded-lg dark:bg-slate-800 dark:border-slate-700 outline-none text-slate-900 dark:text-white"
+                >
+                  <option value="about">About & Mission Template</option>
+                  <option value="contact">Contact & Inquiry Form</option>
+                  <option value="pricing">3-Tier Pricing Matrix</option>
+                  <option value="blank">Blank Clean Canvas</option>
+                </select>
+              </div>
+            </div>
             <div className="flex justify-end gap-2">
               <button
                 onClick={() => setShowAddPageDialog(false)}
@@ -279,7 +332,7 @@ export const Toolbar: React.FC = () => {
                 disabled={!newPageTitle.trim()}
                 onClick={() => {
                   const slug = '/' + newPageTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-                  addPage(newPageTitle.trim(), slug);
+                  addPage(newPageTitle.trim(), slug, newPageTemplate);
                   setNewPageTitle('');
                   setShowAddPageDialog(false);
                 }}

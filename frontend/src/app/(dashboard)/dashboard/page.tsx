@@ -28,7 +28,12 @@ import {
   ChevronRight,
   FolderCheck,
   FileCode2,
+  HardDrive,
+  Database,
+  Server,
 } from 'lucide-react';
+import { WebsiteType } from '../../../types/builder';
+import { TEMPLATES_REGISTRY } from '../../../constants/templates';
 
 interface WorkspaceItem {
   id: string;
@@ -44,39 +49,13 @@ interface WebsiteItem {
   name: string;
   slug: string;
   subdomain: string;
+  siteType?: WebsiteType;
   workspaceId: string | null;
   published: boolean;
   pagesCount: number;
   updatedAt: string;
   thumbnail: string;
 }
-
-const TEMPLATES_LIST = [
-  {
-    id: 'nexus-cloud-infra',
-    title: 'Nexus Cloud Infrastructure',
-    category: 'SaaS',
-    description: 'Enterprise high-converting cloud infrastructure landing page with live metrics, 3 feature cards, and Lucide vector icons.',
-    thumbnail: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=600&auto=format&fit=crop&q=80',
-    tags: ['Cloud', 'SaaS', 'Dark Mode'],
-  },
-  {
-    id: 'minimal-creator-studio',
-    title: 'Minimal Creator Studio',
-    category: 'Portfolio',
-    description: 'Clean typography-first portfolio for designers, developers, and creative agencies.',
-    thumbnail: 'https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?w=600&auto=format&fit=crop&q=80',
-    tags: ['Minimal', 'Agency', 'Creative'],
-  },
-  {
-    id: 'solis-modern-storefront',
-    title: 'Solis Modern Storefront',
-    category: 'E-Commerce',
-    description: 'Clean DTC lifestyle brand storefront with hero banner, product grid, and fast checkout call-to-actions.',
-    thumbnail: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=600&auto=format&fit=crop&q=80',
-    tags: ['E-Commerce', 'Store', 'Products'],
-  },
-];
 
 const WORKSPACE_ICONS: Record<string, React.ElementType> = {
   Folder,
@@ -122,40 +101,31 @@ export default function DashboardPage() {
 
   const [activeWorkspaceId, setActiveWorkspaceId] = useState<string | null>(null);
 
-  // Websites state
+  // Websites state initialized cleanly from templates
   const [websites, setWebsites] = useState<WebsiteItem[]>([
     {
-      id: 'proj_default_01',
-      name: 'Nexus Cloud Infrastructure',
-      slug: 'nexus-cloud-infrastructure',
-      subdomain: 'nexus-cloud',
-      workspaceId: 'ws_client',
-      published: true,
-      pagesCount: 3,
-      updatedAt: 'Just now',
-      thumbnail: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=600&auto=format&fit=crop&q=80',
-    },
-    {
-      id: 'proj_ecommerce_02',
-      name: 'Solis Modern Storefront',
-      slug: 'solis-modern-storefront',
+      id: 'proj_solis_01',
+      name: 'Solis DTC Storefront',
+      slug: 'solis-storefront',
       subdomain: 'solis-store',
+      siteType: 'dynamic',
       workspaceId: 'ws_ecom',
-      published: false,
-      pagesCount: 5,
-      updatedAt: '2 hours ago',
-      thumbnail: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=600&auto=format&fit=crop&q=80',
+      published: true,
+      pagesCount: 4,
+      updatedAt: 'Just now',
+      thumbnail: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&auto=format&fit=crop&q=80',
     },
     {
-      id: 'proj_portfolio_03',
-      name: 'Minimal Creator Studio',
-      slug: 'minimal-creator-studio',
-      subdomain: 'creator-studio',
+      id: 'proj_kroma_02',
+      name: 'Kroma Studio Portfolio',
+      slug: 'kroma-studio',
+      subdomain: 'kroma-studio',
+      siteType: 'static',
       workspaceId: 'ws_personal',
       published: true,
-      pagesCount: 2,
+      pagesCount: 3,
       updatedAt: '1 day ago',
-      thumbnail: 'https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?w=600&auto=format&fit=crop&q=80',
+      thumbnail: 'https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?w=800&auto=format&fit=crop&q=80',
     },
   ]);
 
@@ -168,14 +138,30 @@ export default function DashboardPage() {
   const [newWsColor, setNewWsColor] = useState('#6366f1');
   const [newWsIcon, setNewWsIcon] = useState('Folder');
 
+  // Create Website State
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [creationMode, setCreationMode] = useState<'scratch' | 'template'>('scratch');
-  const [selectedTemplateId, setSelectedTemplateId] = useState(TEMPLATES_LIST[0].id);
+  const [newSiteType, setNewSiteType] = useState<WebsiteType>('dynamic');
+  const [creationMode, setCreationMode] = useState<'scratch' | 'template'>('template');
+  const [selectedTemplateId, setSelectedTemplateId] = useState(TEMPLATES_REGISTRY[0].id);
   const [newSiteName, setNewSiteName] = useState('');
   const [newSiteSubdomain, setNewSiteSubdomain] = useState('');
   const [newSiteWorkspaceId, setNewSiteWorkspaceId] = useState<string | null>(null);
 
   const [movingSiteId, setMovingSiteId] = useState<string | null>(null);
+
+  const availableTemplates = TEMPLATES_REGISTRY.filter((t) => t.siteType === newSiteType);
+
+  const handleTypeChange = (type: WebsiteType) => {
+    setNewSiteType(type);
+    const firstMatching = TEMPLATES_REGISTRY.find((t) => t.siteType === type);
+    if (firstMatching) {
+      setSelectedTemplateId(firstMatching.id);
+      if (!newSiteName || TEMPLATES_REGISTRY.some((t) => t.title === newSiteName)) {
+        setNewSiteName(firstMatching.title);
+        setNewSiteSubdomain(firstMatching.slug);
+      }
+    }
+  };
 
   // Compute workspace counts
   const getWorkspaceCount = (wsId: string) => {
@@ -218,7 +204,7 @@ export default function DashboardPage() {
     if (!newSiteName.trim()) return;
 
     const chosenTemplate = creationMode === 'template'
-      ? TEMPLATES_LIST.find((t) => t.id === selectedTemplateId)
+      ? TEMPLATES_REGISTRY.find((t) => t.id === selectedTemplateId)
       : null;
 
     const newSite: WebsiteItem = {
@@ -226,6 +212,7 @@ export default function DashboardPage() {
       name: newSiteName.trim(),
       slug: newSiteName.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-'),
       subdomain: newSiteSubdomain.trim() || newSiteName.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+      siteType: newSiteType,
       workspaceId: newSiteWorkspaceId,
       published: false,
       pagesCount: 1,
@@ -235,7 +222,12 @@ export default function DashboardPage() {
 
     setWebsites((prev) => [newSite, ...prev]);
     setShowCreateModal(false);
-    router.push(`/editor/${newSite.id}`);
+
+    if (creationMode === 'template' && selectedTemplateId) {
+      router.push(`/?template=${selectedTemplateId}`);
+    } else {
+      router.push('/');
+    }
   };
 
   const handleMoveWebsite = (siteId: string, targetWorkspaceId: string | null) => {
@@ -260,11 +252,18 @@ export default function DashboardPage() {
           </Link>
 
           <nav className="hidden md:flex items-center gap-6 text-xs font-semibold text-slate-500 dark:text-slate-400">
-            <Link href="/dashboard" className="text-indigo-600 dark:text-indigo-400">
+            <Link href="/dashboard" className="text-indigo-600 dark:text-indigo-400 font-bold">
               Websites & Workspaces
             </Link>
             <Link href="/templates" className="hover:text-slate-900 dark:hover:text-slate-100 transition-colors">
               Templates
+            </Link>
+            <Link
+              href="/storage"
+              className="hover:text-slate-900 dark:hover:text-slate-100 flex items-center gap-1.5 transition-colors"
+            >
+              <HardDrive className="w-4 h-4 text-indigo-500" />
+              <span>Storage Hub</span>
             </Link>
             <Link href="/" className="hover:text-slate-900 dark:hover:text-slate-100 transition-colors">
               Visual Editor
@@ -273,6 +272,14 @@ export default function DashboardPage() {
         </div>
 
         <div className="flex items-center gap-3">
+          <Link
+            href="/storage"
+            className="hidden sm:flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            title="View Storage & Quotas"
+          >
+            <HardDrive className="w-3.5 h-3.5 text-indigo-500" />
+            <span>60.4 MB / 5 GB</span>
+          </Link>
           <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
             Pro Plan
           </span>
@@ -291,11 +298,19 @@ export default function DashboardPage() {
               Website Dashboard
             </h1>
             <p className="text-xs md:text-sm text-slate-500 mt-1">
-              Organize websites into workspace folders, craft from scratch, or launch high-craft templates.
+              Organize websites into workspace folders, craft static or database-driven experiences, and track storage.
             </p>
           </div>
 
           <div className="flex items-center gap-3">
+            <Link
+              href="/storage"
+              className="px-4 py-2 text-xs font-semibold rounded-xl border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all flex items-center gap-2 text-slate-700 dark:text-slate-200"
+            >
+              <HardDrive className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+              Storage & Folders
+            </Link>
+
             <button
               onClick={() => {
                 setShowNewWorkspaceModal(true);
@@ -309,6 +324,7 @@ export default function DashboardPage() {
             <button
               onClick={() => {
                 setCreationMode('scratch');
+                setNewSiteType('static');
                 setNewSiteName('');
                 setNewSiteSubdomain('');
                 setNewSiteWorkspaceId(activeWorkspaceId);
@@ -328,6 +344,7 @@ export default function DashboardPage() {
           <div
             onClick={() => {
               setCreationMode('scratch');
+              setNewSiteType('static');
               setNewSiteName('New Website');
               setNewSiteSubdomain('');
               setNewSiteWorkspaceId(activeWorkspaceId);
@@ -342,7 +359,7 @@ export default function DashboardPage() {
               Start Blank Canvas
             </h3>
             <p className="text-xs text-slate-500 leading-relaxed">
-              Open a clean slate with complete design freedom and modern layout primitives.
+              Open a clean slate with complete design freedom, static or dynamic with inbuilt database.
             </p>
           </div>
 
@@ -350,6 +367,7 @@ export default function DashboardPage() {
           <div
             onClick={() => {
               setCreationMode('template');
+              setNewSiteType('dynamic');
               setNewSiteName('Nexus Platform');
               setNewSiteSubdomain('');
               setNewSiteWorkspaceId(activeWorkspaceId);
@@ -368,19 +386,19 @@ export default function DashboardPage() {
             </p>
           </div>
 
-          {/* Card 3: Synthesize with AI */}
+          {/* Card 3: Storage & Directory Hub */}
           <Link
-            href="/"
+            href="/storage"
             className="p-5 bg-gradient-to-br from-indigo-600 to-purple-600 text-white rounded-2xl shadow-md hover:shadow-xl transition-all group cursor-pointer block"
           >
             <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-              <Sparkles className="w-5 h-5 text-white" />
+              <HardDrive className="w-5 h-5 text-white" />
             </div>
             <h3 className="text-sm font-bold mb-1">
-              Open Canva-Style Editor
+              Storage & Workspaces Hub
             </h3>
             <p className="text-xs text-indigo-100 leading-relaxed">
-              Precision arrow keys nudging (1px/10px), floating contextual actions, and Lucide icons.
+              View storage quotas, manage database connections, and browse individual projects inventory.
             </p>
           </Link>
         </div>
@@ -488,11 +506,12 @@ export default function DashboardPage() {
                 No websites found in this workspace
               </h3>
               <p className="text-xs text-slate-500 max-w-sm mx-auto mt-1 mb-4">
-                Start fresh with a blank canvas or choose a pre-built template to store here.
+                Start fresh with a static or dynamic canvas or choose a pre-built template to store here.
               </p>
               <button
                 onClick={() => {
                   setCreationMode('scratch');
+                  setNewSiteType('static');
                   setNewSiteName('New Website');
                   setNewSiteSubdomain('');
                   setNewSiteWorkspaceId(activeWorkspaceId);
@@ -521,12 +540,26 @@ export default function DashboardPage() {
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       />
                       <div className="absolute top-3 right-3 flex items-center gap-1.5">
-                        {site.published ? (
-                          <span className="px-2.5 py-1 text-[11px] font-semibold bg-emerald-500 text-white rounded-full shadow-sm flex items-center gap-1">
-                            <CheckCircle2 className="w-3 h-3" /> Published
+                        {/* Architecture Badge */}
+                        {site.siteType === 'dynamic' ? (
+                          <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-purple-900/90 backdrop-blur-sm text-purple-200 border border-purple-700/60 flex items-center gap-1 shadow-sm">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                            <Database className="w-3 h-3 text-purple-300" />
+                            Dynamic + DB
                           </span>
                         ) : (
-                          <span className="px-2.5 py-1 text-[11px] font-semibold bg-slate-800/80 backdrop-blur-sm text-slate-200 rounded-full shadow-sm">
+                          <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-blue-900/90 backdrop-blur-sm text-blue-200 border border-blue-700/60 flex items-center gap-1 shadow-sm">
+                            <FileCode2 className="w-3 h-3 text-blue-300" />
+                            Static View
+                          </span>
+                        )}
+
+                        {site.published ? (
+                          <span className="px-2.5 py-0.5 text-[11px] font-semibold bg-emerald-500 text-white rounded-full shadow-sm flex items-center gap-1">
+                            <CheckCircle2 className="w-3 h-3" /> Live
+                          </span>
+                        ) : (
+                          <span className="px-2.5 py-0.5 text-[11px] font-semibold bg-slate-800/80 backdrop-blur-sm text-slate-200 rounded-full shadow-sm">
                             Draft
                           </span>
                         )}
@@ -568,6 +601,8 @@ export default function DashboardPage() {
                         </p>
                         <div className="flex items-center gap-3 text-[11px] text-slate-400 mt-3">
                           <span>{site.pagesCount} pages</span>
+                          <span>•</span>
+                          <span>{site.siteType === 'dynamic' ? 'Database CMS' : 'CDN Static'}</span>
                           <span>•</span>
                           <span>Edited {site.updatedAt}</span>
                         </div>
@@ -727,7 +762,7 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Modal: Create Website (Blank vs Template with Workspace Selection) */}
+      {/* Modal: Create Website (Static vs Dynamic with DB, Blank vs Template) */}
       {showCreateModal && (
         <div
           className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4"
@@ -752,11 +787,84 @@ export default function DashboardPage() {
               </button>
             </div>
 
-            <form onSubmit={handleCreateWebsite} className="p-6 space-y-5">
+            <form onSubmit={handleCreateWebsite} className="p-6 space-y-5 max-h-[80vh] overflow-y-auto">
+              {/* Architecture Choice: Static vs Responsive Dynamic with DB */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                  1. Website Architecture & Data Mode
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setNewSiteType('static')}
+                    className={`p-3.5 rounded-xl border text-left flex items-start gap-3 transition-all ${
+                      newSiteType === 'static'
+                        ? 'border-indigo-600 bg-indigo-50/50 dark:bg-indigo-950/40 text-indigo-950 dark:text-indigo-200 ring-2 ring-indigo-500/20'
+                        : 'border-slate-200 dark:border-slate-800 text-slate-600 hover:border-slate-300'
+                    }`}
+                  >
+                    <FileCode2 className="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <div className="text-xs font-bold flex items-center gap-1.5">
+                        <span>Static Website</span>
+                        <span className="text-[10px] px-1.5 py-0.2 bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-300 rounded font-normal">
+                          View-Only
+                        </span>
+                      </div>
+                      <div className="text-[11px] text-slate-500 mt-1 leading-snug">
+                        Instant edge hosting, zero database needed. Ideal for marketing landers, portfolios & bios.
+                      </div>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setNewSiteType('dynamic')}
+                    className={`p-3.5 rounded-xl border text-left flex items-start gap-3 transition-all ${
+                      newSiteType === 'dynamic'
+                        ? 'border-purple-600 bg-purple-50/50 dark:bg-purple-950/40 text-purple-950 dark:text-purple-200 ring-2 ring-purple-500/20'
+                        : 'border-slate-200 dark:border-slate-800 text-slate-600 hover:border-slate-300'
+                    }`}
+                  >
+                    <Database className="w-5 h-5 text-purple-600 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <div className="text-xs font-bold flex items-center gap-1.5">
+                        <span>Dynamic Website</span>
+                        <span className="text-[10px] px-1.5 py-0.2 bg-purple-100 text-purple-700 dark:bg-purple-900/60 dark:text-purple-300 rounded font-normal">
+                          With DB
+                        </span>
+                      </div>
+                      <div className="text-[11px] text-slate-500 mt-1 leading-snug">
+                        Database for CMS collections, inbound leads, blogs & e-commerce. Inbuilt DB settings included.
+                      </div>
+                    </div>
+                  </button>
+                </div>
+              </div>
+
+              {/* Inbuilt DB Configuration preview if Dynamic is selected */}
+              {newSiteType === 'dynamic' && (
+                <div className="p-3 bg-purple-50/60 dark:bg-purple-950/30 rounded-xl border border-purple-200 dark:border-purple-800/60 space-y-1.5 animate-in fade-in duration-200">
+                  <div className="flex items-center justify-between text-xs font-semibold text-purple-950 dark:text-purple-200">
+                    <span className="flex items-center gap-1.5">
+                      <Database className="w-3.5 h-3.5 text-purple-600" />
+                      Inbuilt Database Provisioning
+                    </span>
+                    <span className="text-[10px] px-2 py-0.5 bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-300 rounded-full font-bold flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      Auto-Provisioned
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-purple-800/80 dark:text-purple-300/80 leading-relaxed">
+                    A managed relational database with collections builder (Leads, Testimonials, Products) and visual data binding will be configured automatically for this project.
+                  </p>
+                </div>
+              )}
+
               {/* Mode Selection */}
               <div>
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-2">
-                  Creation Strategy
+                  2. Creation Strategy
                 </label>
                 <div className="grid grid-cols-2 gap-3">
                   <button
@@ -799,8 +907,8 @@ export default function DashboardPage() {
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-2">
                     Choose Template
                   </label>
-                  <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
-                    {TEMPLATES_LIST.map((tmpl) => (
+                  <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
+                    {availableTemplates.map((tmpl) => (
                       <div
                         key={tmpl.id}
                         onClick={() => setSelectedTemplateId(tmpl.id)}
@@ -817,10 +925,15 @@ export default function DashboardPage() {
                             className="w-12 h-9 rounded object-cover"
                           />
                           <div>
-                            <div className="text-xs font-bold text-slate-900 dark:text-white">
+                            <div className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
                               {tmpl.title}
+                              <span className="text-[9px] px-1.5 py-0.5 rounded font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                                {tmpl.badge}
+                              </span>
                             </div>
-                            <div className="text-[10px] text-slate-400">{tmpl.category}</div>
+                            <div className="text-[10px] text-slate-400">
+                              {tmpl.category} • {tmpl.siteType === 'dynamic' ? 'Dynamic + DB' : 'Static View-Only'}
+                            </div>
                           </div>
                         </div>
                         {selectedTemplateId === tmpl.id && (

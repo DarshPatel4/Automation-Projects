@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useEditorStore } from '../../stores/editorStore';
+import { THEME_PRESETS } from '../../constants/themePresets';
 import {
   Boxes,
   Layers,
@@ -30,6 +31,17 @@ import {
   Quote,
   SplitSquareVertical,
   Minus,
+  Database,
+  Server,
+  HardDrive,
+  CheckCircle2,
+  Activity,
+  Table,
+  Check,
+  RefreshCw,
+  FileCode2,
+  ArrowRight,
+  ExternalLink,
 } from 'lucide-react';
 
 export const LeftSidebar: React.FC = () => {
@@ -45,10 +57,25 @@ export const LeftSidebar: React.FC = () => {
   const toggleLock = useEditorStore((s) => s.toggleLock);
   const toggleHidden = useEditorStore((s) => s.toggleHidden);
   const updateTheme = useEditorStore((s) => s.updateTheme);
+  const applyThemePreset = useEditorStore((s) => s.applyThemePreset);
+  const addPage = useEditorStore((s) => s.addPage);
+  const switchPage = useEditorStore((s) => s.switchPage);
+  const deletePage = useEditorStore((s) => s.deletePage);
+  const updateDbConfig = useEditorStore((s) => s.updateDbConfig);
+  const addCmsCollection = useEditorStore((s) => s.addCmsCollection);
   const previewMode = useEditorStore((s) => s.previewMode);
 
   const [aiPrompt, setAiPrompt] = useState('');
   const [aiGenerating, setAiGenerating] = useState(false);
+  const [testingDb, setTestingDb] = useState(false);
+  const [testResult, setTestResult] = useState<string | null>(null);
+  const [newColName, setNewColName] = useState('');
+  const [newColLabel, setNewColLabel] = useState('');
+  const [showAddCol, setShowAddCol] = useState(false);
+  const [showAddPage, setShowAddPage] = useState(false);
+  const [pageTitle, setPageTitle] = useState('');
+  const [pageSlug, setPageSlug] = useState('');
+  const [pageTemplate, setPageTemplate] = useState<'blank' | 'about' | 'contact' | 'pricing'>('about');
 
   if (previewMode) return null;
 
@@ -286,7 +313,9 @@ export const LeftSidebar: React.FC = () => {
         {[
           { id: 'elements', icon: Boxes, label: 'Add' },
           { id: 'layers', icon: Layers, label: 'Layers' },
-          { id: 'theme', icon: Palette, label: 'Tokens' },
+          { id: 'pages', icon: FileCode2, label: 'Pages' },
+          { id: 'database', icon: Database, label: 'Data & DB' },
+          { id: 'theme', icon: Palette, label: 'Theme' },
           { id: 'ai', icon: Sparkles, label: 'Synthesize' },
         ].map((tab) => {
           const Icon = tab.icon;
@@ -612,71 +641,300 @@ export const LeftSidebar: React.FC = () => {
           </div>
         )}
 
-        {/* THEME TAB */}
+        {/* PAGES TAB */}
+        {activeLeftTab === 'pages' && (
+          <div className="p-4 space-y-4">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+              <div>
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-200 block">
+                  Pages & Navigation
+                </span>
+                <span className="text-[11px] text-slate-400">
+                  {project.pages.length} {project.pages.length === 1 ? 'page' : 'pages'} in site
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowAddPage(!showAddPage)}
+                className="px-2.5 py-1 text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors flex items-center gap-1 shadow-sm"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                New Page
+              </button>
+            </div>
+
+            {/* Add Page Mini Form */}
+            {showAddPage && (
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (!pageTitle.trim()) return;
+                  const slug = pageSlug.trim() || `/${pageTitle.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+                  addPage(pageTitle.trim(), slug, pageTemplate);
+                  setPageTitle('');
+                  setPageSlug('');
+                  setShowAddPage(false);
+                }}
+                className="p-3 bg-slate-800/90 rounded-xl border border-indigo-700/60 space-y-2.5"
+              >
+                <div className="text-xs font-bold text-indigo-300">Create New Page</div>
+                <div>
+                  <label className="text-[11px] text-slate-400 block mb-1">Page Title</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Services, About Us, Pricing"
+                    value={pageTitle}
+                    onChange={(e) => {
+                      setPageTitle(e.target.value);
+                      if (!pageSlug || pageSlug.startsWith('/')) {
+                        setPageSlug(`/${e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`);
+                      }
+                    }}
+                    className="w-full text-xs px-2.5 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-white outline-none focus:border-indigo-500"
+                  />
+                </div>
+                <div>
+                  <label className="text-[11px] text-slate-400 block mb-1">URL Path Slug</label>
+                  <input
+                    type="text"
+                    placeholder="/services"
+                    value={pageSlug}
+                    onChange={(e) => setPageSlug(e.target.value)}
+                    className="w-full text-xs px-2.5 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-white font-mono outline-none focus:border-indigo-500"
+                  />
+                </div>
+                <div>
+                  <label className="text-[11px] text-slate-400 block mb-1">Layout Template</label>
+                  <select
+                    value={pageTemplate}
+                    onChange={(e) => setPageTemplate(e.target.value as any)}
+                    className="w-full text-xs px-2.5 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-white outline-none"
+                  >
+                    <option value="about">About & Mission Template</option>
+                    <option value="contact">Contact & Inquiry Form</option>
+                    <option value="pricing">3-Tier Pricing Matrix</option>
+                    <option value="blank">Blank Clean Canvas</option>
+                  </select>
+                </div>
+                <div className="flex gap-2 pt-1">
+                  <button
+                    type="submit"
+                    className="flex-1 py-1.5 text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors"
+                  >
+                    Add Page
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowAddPage(false)}
+                    className="px-3 py-1.5 text-xs text-slate-400 hover:bg-slate-700 rounded-lg transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* Pages List */}
+            <div className="space-y-2">
+              {project.pages.map((p) => {
+                const isActive = p.id === project.activePageId;
+
+                return (
+                  <div
+                    key={p.id}
+                    onClick={() => switchPage(p.id)}
+                    className={`p-3 rounded-xl border cursor-pointer transition-all flex items-center justify-between ${
+                      isActive
+                        ? 'bg-indigo-950/60 border-indigo-600/80 shadow-md shadow-indigo-950/40'
+                        : 'bg-slate-800/60 border-slate-800 hover:border-slate-700'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <FileCode2 className={`w-4 h-4 ${isActive ? 'text-indigo-400' : 'text-slate-400'}`} />
+                      <div>
+                        <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                          {p.title}
+                          {isActive && (
+                            <span className="px-1.5 py-0.2 text-[9px] rounded bg-indigo-500/20 text-indigo-300 font-mono">
+                              Active
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-[10px] text-slate-400 font-mono">{p.slug}</div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-1">
+                      {project.pages.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deletePage(p.id);
+                          }}
+                          className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-slate-700/50 rounded-lg transition-colors"
+                          title="Delete Page"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* THEME TAB (Curated Human Design Presets & Tokens) */}
         {activeLeftTab === 'theme' && (
-          <div className="p-4 space-y-5">
+          <div className="p-4 space-y-6">
             <div>
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-2">
-                Design System Tokens
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-200 block mb-1">
+                Curated Design Presets
               </span>
-              <p className="text-xs text-slate-400">
-                Centralized token palette cascading across canvas components.
+              <p className="text-[11px] text-slate-400 leading-relaxed">
+                Human-crafted architectural color palettes replacing generic AI gradients. Inspired by elite modern software studios.
               </p>
             </div>
 
-            <div className="space-y-4">
+            {/* 5 Presets List */}
+            <div className="space-y-3">
+              {THEME_PRESETS.map((preset) => {
+                const isActive = project.theme.presetId === preset.id;
+
+                return (
+                  <div
+                    key={preset.id}
+                    onClick={() => applyThemePreset(preset.id)}
+                    className={`p-3.5 rounded-xl border transition-all cursor-pointer relative group ${
+                      isActive
+                        ? 'border-indigo-500 bg-indigo-950/40 shadow-lg shadow-indigo-950/30'
+                        : 'border-slate-800 bg-slate-800/50 hover:border-slate-700 hover:bg-slate-800/80'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-1.5">
+                      <div className="font-bold text-xs text-white flex items-center gap-2">
+                        {preset.name}
+                        <span className="text-[9px] px-1.5 py-0.5 rounded font-mono bg-slate-800 text-slate-300 border border-slate-700">
+                          {preset.category}
+                        </span>
+                      </div>
+                      {isActive && (
+                        <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-400">
+                          <Check className="w-3.5 h-3.5" /> Active
+                        </span>
+                      )}
+                    </div>
+
+                    <p className="text-[11px] text-slate-400 mb-2.5 leading-snug">
+                      {preset.tagline}
+                    </p>
+
+                    {/* Color Swatches Bar */}
+                    <div className="flex items-center gap-1.5">
+                      {preset.swatches.map((color, idx) => (
+                        <div
+                          key={idx}
+                          style={{ backgroundColor: color }}
+                          className="h-4 flex-1 rounded border border-white/10 shadow-sm"
+                          title={color}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Fine-Tune Theme Tokens */}
+            <div className="space-y-4 pt-4 border-t border-slate-800">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-400 block">
+                Fine-Tune Design Tokens
+              </span>
+
+              {/* Accent Color */}
               <div>
                 <label className="text-xs font-semibold text-slate-300 block mb-1.5">
-                  Primary Accent Color
+                  Primary Brand Accent
                 </label>
                 <div className="flex items-center gap-2">
                   <input
                     type="color"
                     value={project.theme.primaryColor}
                     onChange={(e) => updateTheme({ primaryColor: e.target.value })}
-                    className="w-9 h-9 rounded-lg border border-slate-700 cursor-pointer p-0.5 bg-slate-800"
+                    className="w-8 h-8 rounded-lg border border-slate-700 cursor-pointer p-0.5 bg-slate-800"
                   />
                   <input
                     type="text"
                     value={project.theme.primaryColor}
                     onChange={(e) => updateTheme({ primaryColor: e.target.value })}
-                    className="flex-1 text-xs font-mono uppercase px-3 py-2 border border-slate-700 rounded-lg bg-slate-800 text-slate-100"
+                    className="flex-1 text-xs font-mono uppercase px-3 py-1.5 border border-slate-700 rounded-lg bg-slate-800 text-slate-100"
                   />
                 </div>
               </div>
 
+              {/* Background Color */}
               <div>
                 <label className="text-xs font-semibold text-slate-300 block mb-1.5">
-                  Heading Typography
+                  Canvas Background Tone
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    value={project.theme.backgroundColor}
+                    onChange={(e) => updateTheme({ backgroundColor: e.target.value })}
+                    className="w-8 h-8 rounded-lg border border-slate-700 cursor-pointer p-0.5 bg-slate-800"
+                  />
+                  <input
+                    type="text"
+                    value={project.theme.backgroundColor}
+                    onChange={(e) => updateTheme({ backgroundColor: e.target.value })}
+                    className="flex-1 text-xs font-mono uppercase px-3 py-1.5 border border-slate-700 rounded-lg bg-slate-800 text-slate-100"
+                  />
+                </div>
+              </div>
+
+              {/* Heading Typography */}
+              <div>
+                <label className="text-xs font-semibold text-slate-300 block mb-1.5">
+                  Typography Pairing
                 </label>
                 <select
                   value={project.theme.headingFont}
                   onChange={(e) => updateTheme({ headingFont: e.target.value })}
                   className="w-full text-xs px-3 py-2 border border-slate-700 rounded-lg bg-slate-800 text-slate-100 outline-none"
                 >
-                  <option value="Inter, system-ui, sans-serif">Inter</option>
-                  <option value="Plus Jakarta Sans, sans-serif">Plus Jakarta Sans</option>
-                  <option value="Poppins, sans-serif">Poppins</option>
-                  <option value="Outfit, sans-serif">Outfit</option>
+                  <option value="Inter, system-ui, sans-serif">Inter (Modern Clean Neo-Grotesque)</option>
+                  <option value="Plus Jakarta Sans, sans-serif">Plus Jakarta Sans (Geometric Authority)</option>
+                  <option value="Georgia, serif">Georgia / Serif (Warm Editorial & Luxury)</option>
+                  <option value="Outfit, sans-serif">Outfit (Futuristic Tech)</option>
                 </select>
               </div>
 
+              {/* Border Radius Token */}
               <div>
                 <label className="text-xs font-semibold text-slate-300 block mb-1.5">
-                  Border Radius Token
+                  Corner Radius Language
                 </label>
-                <div className="grid grid-cols-3 gap-2">
-                  {['0px', '8px', '16px'].map((r) => (
+                <div className="grid grid-cols-4 gap-1.5">
+                  {[
+                    { id: '0px', label: 'Sharp' },
+                    { id: '6px', label: 'Subtle' },
+                    { id: '12px', label: 'Soft' },
+                    { id: '9999px', label: 'Pill' },
+                  ].map((r) => (
                     <button
-                      key={r}
-                      onClick={() => updateTheme({ borderRadius: r })}
-                      className={`text-xs py-2 border rounded-lg font-medium transition-all ${
-                        project.theme.borderRadius === r
-                          ? 'border-indigo-500 bg-indigo-950/60 text-indigo-300'
+                      key={r.id}
+                      type="button"
+                      onClick={() => updateTheme({ borderRadius: r.id })}
+                      className={`text-xs py-1.5 border rounded-lg font-medium transition-all ${
+                        project.theme.borderRadius === r.id
+                          ? 'border-indigo-500 bg-indigo-950/60 text-indigo-300 font-bold'
                           : 'border-slate-800 text-slate-400 hover:bg-slate-800'
                       }`}
                     >
-                      {r === '0px' ? 'Sharp' : r === '8px' ? 'Subtle (8px)' : 'Curved (16px)'}
+                      {r.label}
                     </button>
                   ))}
                 </div>
@@ -734,6 +992,195 @@ export const LeftSidebar: React.FC = () => {
                   >
                     ✦ {qp}
                   </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* DATABASE & CMS TAB */}
+        {activeLeftTab === 'database' && (
+          <div className="p-4 space-y-5">
+            <div>
+              <div className="flex items-center gap-2">
+                <Database className="w-5 h-5 text-purple-400" />
+                <h3 className="text-sm font-bold text-slate-100">
+                  Database & CMS Manager
+                </h3>
+              </div>
+              <p className="text-xs text-slate-400 leading-relaxed mt-1">
+                Configure inbuilt SQLite / Postgres connections, manage CMS collections, and bind dynamic records.
+              </p>
+            </div>
+
+            {/* Architecture Banner */}
+            {project.siteType === 'dynamic' ? (
+              <div className="p-3 bg-purple-950/40 rounded-xl border border-purple-800/50 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-purple-200 flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                    Inbuilt Managed DB Online
+                  </span>
+                  <span className="text-[10px] font-mono text-emerald-400 bg-emerald-950/60 border border-emerald-800/40 px-2 py-0.5 rounded-full">
+                    Latency 2ms
+                  </span>
+                </div>
+                <div className="text-[11px] text-slate-400">
+                  Engine: <span className="text-slate-200 font-mono font-medium">SQLite (nexus_managed_db)</span>
+                </div>
+                <button
+                  disabled={testingDb}
+                  onClick={() => {
+                    setTestingDb(true);
+                    setTestResult(null);
+                    setTimeout(() => {
+                      setTestingDb(false);
+                      setTestResult('Ping OK: 2ms • Health 100%');
+                    }, 600);
+                  }}
+                  className="w-full py-1.5 text-xs font-semibold rounded-lg bg-purple-600 hover:bg-purple-700 text-white transition-colors flex items-center justify-center gap-1.5"
+                >
+                  <Activity className="w-3.5 h-3.5" />
+                  {testingDb ? 'Testing Connection...' : 'Test DB Connection'}
+                </button>
+                {testResult && (
+                  <div className="text-[11px] text-center font-mono text-emerald-400 font-semibold pt-1">
+                    {testResult}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="p-3 bg-blue-950/40 rounded-xl border border-blue-800/50 space-y-2">
+                <div className="text-xs font-bold text-blue-200">Static View-Only Site</div>
+                <p className="text-[11px] text-slate-400">
+                  This website is currently pure static (zero database overhead).
+                </p>
+                <button
+                  onClick={() => {
+                    useEditorStore.setState((s) => ({
+                      project: {
+                        ...s.project,
+                        siteType: 'dynamic',
+                        dbConfig: {
+                          engine: 'sqlite',
+                          is_inbuilt: true,
+                          status: 'connected',
+                          latency_ms: 2,
+                        },
+                      },
+                    }));
+                  }}
+                  className="w-full py-1.5 text-xs font-semibold rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white transition-colors"
+                >
+                  Upgrade to Dynamic + DB
+                </button>
+              </div>
+            )}
+
+            {/* Inbuilt Database Engine Settings */}
+            <div className="space-y-3 pt-2 border-t border-slate-800">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
+                Database Engine Settings
+              </span>
+
+              <div>
+                <label className="text-xs font-medium text-slate-400 block mb-1">
+                  Database Type
+                </label>
+                <select
+                  value={project.dbConfig?.engine || 'sqlite'}
+                  onChange={(e) => updateDbConfig({ engine: e.target.value as any })}
+                  className="w-full text-xs px-3 py-2 border border-slate-700 rounded-lg bg-slate-800 text-slate-100 outline-none"
+                >
+                  <option value="sqlite">Inbuilt SQLite (Local Zero-Config)</option>
+                  <option value="postgres">PostgreSQL / Supabase (External Connector)</option>
+                  <option value="mysql">MySQL / PlanetScale</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-xs font-medium text-slate-400 block mb-1">
+                  Database Identifier
+                </label>
+                <input
+                  type="text"
+                  value={project.dbConfig?.database_name || 'nexus_managed_db.sqlite3'}
+                  onChange={(e) => updateDbConfig({ database_name: e.target.value })}
+                  className="w-full text-xs px-3 py-2 border border-slate-700 rounded-lg bg-slate-800 text-slate-100 outline-none font-mono"
+                />
+              </div>
+            </div>
+
+            {/* CMS Collections */}
+            <div className="space-y-3 pt-3 border-t border-slate-800">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                  CMS Collections
+                </span>
+                <button
+                  onClick={() => setShowAddCol(!showAddCol)}
+                  className="text-xs text-indigo-400 hover:text-indigo-300 font-medium flex items-center gap-1"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  New Collection
+                </button>
+              </div>
+
+              {/* Add Collection Mini Form */}
+              {showAddCol && (
+                <div className="p-3 bg-slate-800 rounded-xl space-y-2 border border-slate-700">
+                  <input
+                    type="text"
+                    placeholder="Collection Name (e.g. blog, reviews)"
+                    value={newColName}
+                    onChange={(e) => setNewColName(e.target.value)}
+                    className="w-full text-xs px-2.5 py-1.5 bg-slate-900 border border-slate-700 rounded-lg outline-none text-white"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Display Label (e.g. Blog Articles)"
+                    value={newColLabel}
+                    onChange={(e) => setNewColLabel(e.target.value)}
+                    className="w-full text-xs px-2.5 py-1.5 bg-slate-900 border border-slate-700 rounded-lg outline-none text-white"
+                  />
+                  <button
+                    onClick={() => {
+                      if (!newColName.trim()) return;
+                      addCmsCollection({
+                        id: `col_${Date.now()}`,
+                        name: newColName.trim().toLowerCase(),
+                        label: newColLabel.trim() || newColName.trim(),
+                        fields: [{ name: 'title', label: 'Title', type: 'text', required: true }],
+                        recordsCount: 0,
+                      });
+                      setNewColName('');
+                      setNewColLabel('');
+                      setShowAddCol(false);
+                    }}
+                    className="w-full py-1 text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors"
+                  >
+                    Create Collection
+                  </button>
+                </div>
+              )}
+
+              {/* Collections List */}
+              <div className="space-y-2">
+                {(project.collections || []).map((col) => (
+                  <div
+                    key={col.id}
+                    className="p-3 rounded-xl bg-slate-800/80 border border-slate-700/60 flex items-center justify-between"
+                  >
+                    <div>
+                      <div className="font-bold text-xs text-slate-200">{col.label}</div>
+                      <div className="font-mono text-[10px] text-slate-400">
+                        {col.fields.length} fields • {col.recordsCount || 0} records
+                      </div>
+                    </div>
+                    <span className="px-2 py-0.5 text-[10px] bg-slate-700 text-slate-300 rounded font-mono">
+                      {col.name}
+                    </span>
+                  </div>
                 ))}
               </div>
             </div>

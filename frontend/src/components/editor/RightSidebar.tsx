@@ -1,8 +1,8 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useEditorStore } from '../../stores/editorStore';
-import { ComponentStyle } from '../../types/builder';
+import { ComponentStyle, ClickAction, ActionType } from '../../types/builder';
 import { availableIcons } from '../ui/LucideIcon';
 import {
   SlidersHorizontal,
@@ -18,6 +18,23 @@ import {
   ArrowRight,
   Square,
   ShieldCheck,
+  Zap,
+  MousePointerClick,
+  Globe,
+  Webhook,
+  FileCode,
+  ArrowUpRight,
+  Anchor,
+  ShoppingBag,
+  Database,
+  Plus,
+  Play,
+  CheckCircle2,
+  AlertCircle,
+  ExternalLink,
+  MessageSquare,
+  Check,
+  Loader2,
 } from 'lucide-react';
 
 export const RightSidebar: React.FC = () => {
@@ -27,10 +44,19 @@ export const RightSidebar: React.FC = () => {
   const setActiveStyleTab = useEditorStore((s) => s.setActiveStyleTab);
   const activeBreakpoint = useEditorStore((s) => s.activeBreakpoint);
   const previewMode = useEditorStore((s) => s.previewMode);
+  const project = useEditorStore((s) => s.project);
+  const addPage = useEditorStore((s) => s.addPage);
 
   const updateNodeProps = useEditorStore((s) => s.updateNodeProps);
   const updateNodeStyles = useEditorStore((s) => s.updateNodeStyles);
   const updateNodeName = useEditorStore((s) => s.updateNodeName);
+
+  const [showNewPageForm, setShowNewPageForm] = useState(false);
+  const [newPageTitle, setNewPageTitle] = useState('');
+  const [newPageSlug, setNewPageSlug] = useState('');
+  const [newPageTemplate, setNewPageTemplate] = useState<'blank' | 'about' | 'contact' | 'pricing'>('about');
+  const [testingWebhook, setTestingWebhook] = useState(false);
+  const [webhookTestStatus, setWebhookTestStatus] = useState<{ ok: boolean; status: number; text: string } | null>(null);
 
   if (previewMode) return null;
 
@@ -70,6 +96,49 @@ export const RightSidebar: React.FC = () => {
     handleStyleChange('margin', { ...currentMargin, [side]: val });
   };
 
+  const currentAction: ClickAction = node.props?.action || { type: 'none' };
+
+  const handleActionChange = (updates: Partial<ClickAction>) => {
+    const merged: ClickAction = { ...currentAction, ...updates };
+    updateNodeProps(node.id, { action: merged });
+  };
+
+  const handleCreateAndLinkPage = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newPageTitle.trim()) return;
+    const slug = newPageSlug.trim() || `/${newPageTitle.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+    const createdPageId = addPage(newPageTitle.trim(), slug, newPageTemplate);
+    handleActionChange({
+      type: 'navigate_page',
+      targetPageId: createdPageId,
+      targetPageSlug: slug,
+    });
+    setShowNewPageForm(false);
+    setNewPageTitle('');
+    setNewPageSlug('');
+  };
+
+  const handleTestWebhook = async () => {
+    if (!currentAction.webhookUrl) return;
+    setTestingWebhook(true);
+    setWebhookTestStatus(null);
+    try {
+      const res = await fetch(currentAction.webhookUrl, {
+        method: currentAction.webhookMethod || 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(currentAction.webhookHeaders || {}),
+        },
+        body: currentAction.webhookMethod === 'POST' ? JSON.stringify(currentAction.webhookPayload || { test: true, timestamp: Date.now() }) : undefined,
+      });
+      setWebhookTestStatus({ ok: res.ok, status: res.status, text: res.statusText || (res.ok ? 'OK' : 'Error') });
+    } catch (err: any) {
+      setWebhookTestStatus({ ok: false, status: 0, text: err.message || 'Network / CORS request failed' });
+    } finally {
+      setTestingWebhook(false);
+    }
+  };
+
   return (
     <aside className="w-80 border-l border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col h-[calc(100vh-3.5rem)] select-none">
       {/* Node Header */}
@@ -96,6 +165,7 @@ export const RightSidebar: React.FC = () => {
           { id: 'layout', label: 'Layout' },
           { id: 'typography', label: 'Text' },
           { id: 'spacing', label: 'Spacing' },
+          { id: 'actions', label: 'Actions' },
         ].map((tab) => (
           <button
             key={tab.id}
@@ -181,17 +251,18 @@ export const RightSidebar: React.FC = () => {
                   className="w-full p-2 border rounded-md dark:bg-slate-800 dark:border-slate-700 outline-none"
                 />
               </div>
-              <div>
-                <label className="text-slate-600 dark:text-slate-300 font-medium block mb-1">
-                  Destination URL
-                </label>
-                <input
-                  type="text"
-                  value={node.props?.href || ''}
-                  onChange={(e) => updateNodeProps(node.id, { href: e.target.value })}
-                  placeholder="https:// or #section"
-                  className="w-full p-2 border rounded-md dark:bg-slate-800 dark:border-slate-700 outline-none font-mono"
-                />
+              <div className="pt-1">
+                <button
+                  type="button"
+                  onClick={() => setActiveStyleTab('actions')}
+                  className="w-full py-1.5 px-3 rounded-lg border border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 font-semibold text-xs flex items-center justify-between hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors shadow-sm"
+                >
+                  <span className="flex items-center gap-1.5">
+                    <Zap className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                    <span>Click Action: <b className="capitalize">{currentAction.type.replace('_', ' ')}</b></span>
+                  </span>
+                  <span className="text-[10px] underline font-medium">Configure</span>
+                </button>
               </div>
             </>
           )}
@@ -645,6 +716,476 @@ export const RightSidebar: React.FC = () => {
                 />
               </div>
             </div>
+          </div>
+        )}
+
+        {/* TAB 5: ACTIONS & WORKFLOWS */}
+        {activeStyleTab === 'actions' && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
+              <div className="flex items-center gap-2">
+                <Zap className="w-4 h-4 text-amber-500" />
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                  Click Actions & Workflows
+                </span>
+              </div>
+              <span className="text-[10px] text-slate-400 font-mono">
+                {currentAction.type !== 'none' ? 'Active' : 'Idle'}
+              </span>
+            </div>
+
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Configure what happens when a user clicks on this element in both static and dynamic sites.
+            </p>
+
+            {/* Action Type Dropdown */}
+            <div>
+              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1.5">
+                Trigger Action Type
+              </label>
+              <select
+                value={currentAction.type}
+                onChange={(e) => handleActionChange({ type: e.target.value as ActionType })}
+                className="w-full text-xs px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 outline-none focus:border-indigo-500"
+              >
+                <option value="none">None (Standard Display Only)</option>
+                <option value="navigate_page">Navigate to Page (Internal Routing)</option>
+                <option value="webhook">Trigger Webhook / API Endpoint</option>
+                <option value="scroll_anchor">Scroll to Anchor / Section ID</option>
+                <option value="external_url">Open External URL</option>
+                <option value="open_modal">Open Modal Dialog / Popup</option>
+                <option value="cms_submit">Submit Form to Database (CMS Collection)</option>
+                <option value="cart_action">E-Commerce Add to Cart / Checkout</option>
+              </select>
+            </div>
+
+            {/* 1. Page Navigation Config */}
+            {currentAction.type === 'navigate_page' && (
+              <div className="p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    Destination Page
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPageForm(!showNewPageForm)}
+                    className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline font-semibold flex items-center gap-1"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    Setup New Page
+                  </button>
+                </div>
+
+                {/* Inline New Page Setup Form */}
+                {showNewPageForm && (
+                  <form onSubmit={handleCreateAndLinkPage} className="p-3 bg-white dark:bg-slate-900 rounded-lg border border-indigo-200 dark:border-indigo-800 space-y-2.5 shadow-sm">
+                    <div className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">
+                      Setup New Page
+                    </div>
+                    <div>
+                      <label className="text-[11px] font-medium text-slate-600 dark:text-slate-400 block mb-1">
+                        Page Title
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Pricing, Case Studies, Contact"
+                        value={newPageTitle}
+                        onChange={(e) => {
+                          setNewPageTitle(e.target.value);
+                          if (!newPageSlug || newPageSlug.startsWith('/')) {
+                            setNewPageSlug(`/${e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`);
+                          }
+                        }}
+                        className="w-full text-xs px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 rounded-md bg-transparent outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[11px] font-medium text-slate-600 dark:text-slate-400 block mb-1">
+                        URL Slug
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="/pricing"
+                        value={newPageSlug}
+                        onChange={(e) => setNewPageSlug(e.target.value)}
+                        className="w-full text-xs px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 rounded-md bg-transparent outline-none font-mono"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[11px] font-medium text-slate-600 dark:text-slate-400 block mb-1">
+                        Initial Template
+                      </label>
+                      <select
+                        value={newPageTemplate}
+                        onChange={(e) => setNewPageTemplate(e.target.value as any)}
+                        className="w-full text-xs px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 rounded-md bg-transparent outline-none"
+                      >
+                        <option value="about">About Us & Mission</option>
+                        <option value="contact">Contact & Inquiry Form</option>
+                        <option value="pricing">3-Tier Pricing Matrix</option>
+                        <option value="blank">Blank Clean Canvas</option>
+                      </select>
+                    </div>
+                    <div className="flex gap-2 pt-1">
+                      <button
+                        type="submit"
+                        className="flex-1 py-1.5 text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white rounded-md transition-colors"
+                      >
+                        Create & Link
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setShowNewPageForm(false)}
+                        className="px-2.5 py-1.5 text-xs font-medium border border-slate-200 dark:border-slate-700 rounded-md text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </form>
+                )}
+
+                <select
+                  value={currentAction.targetPageId || ''}
+                  onChange={(e) => {
+                    const target = project.pages.find((p) => p.id === e.target.value);
+                    handleActionChange({
+                      targetPageId: e.target.value,
+                      targetPageSlug: target?.slug,
+                    });
+                  }}
+                  className="w-full text-xs px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 outline-none"
+                >
+                  <option value="">Select Target Page...</option>
+                  {project.pages.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.title} ({p.slug})
+                    </option>
+                  ))}
+                </select>
+
+                <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-600 dark:text-slate-300 pt-1">
+                  <input
+                    type="checkbox"
+                    checked={!!currentAction.openInNewTab}
+                    onChange={(e) => handleActionChange({ openInNewTab: e.target.checked })}
+                    className="accent-indigo-600 rounded"
+                  />
+                  <span>Open page in new browser tab</span>
+                </label>
+              </div>
+            )}
+
+            {/* 2. Webhook Config */}
+            {currentAction.type === 'webhook' && (
+              <div className="p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3">
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200">
+                  <Webhook className="w-4 h-4 text-indigo-500" />
+                  <span>Webhook API Dispatcher</span>
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-medium text-slate-600 dark:text-slate-400 block mb-1">
+                    Endpoint URL
+                  </label>
+                  <input
+                    type="url"
+                    placeholder="https://hooks.zapier.com/... or /api/v1/webhook"
+                    value={currentAction.webhookUrl || ''}
+                    onChange={(e) => handleActionChange({ webhookUrl: e.target.value })}
+                    className="w-full text-xs px-2.5 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 font-mono outline-none"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-[11px] font-medium text-slate-600 dark:text-slate-400 block mb-1">
+                      HTTP Method
+                    </label>
+                    <select
+                      value={currentAction.webhookMethod || 'POST'}
+                      onChange={(e) => handleActionChange({ webhookMethod: e.target.value as any })}
+                      className="w-full text-xs px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 outline-none"
+                    >
+                      <option value="POST">POST</option>
+                      <option value="GET">GET</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] font-medium text-slate-600 dark:text-slate-400 block mb-1">
+                      Success Toast
+                    </label>
+                    <label className="flex items-center gap-2 h-8 text-xs text-slate-600 dark:text-slate-300">
+                      <input
+                        type="checkbox"
+                        checked={currentAction.showSuccessToast !== false}
+                        onChange={(e) => handleActionChange({ showSuccessToast: e.target.checked })}
+                        className="accent-indigo-600 rounded"
+                      />
+                      <span>Show notification</span>
+                    </label>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-medium text-slate-600 dark:text-slate-400 block mb-1">
+                    Success Toast Message
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Webhook executed successfully!"
+                    value={currentAction.successMessage || ''}
+                    onChange={(e) => handleActionChange({ successMessage: e.target.value })}
+                    className="w-full text-xs px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 outline-none"
+                  />
+                </div>
+
+                {/* Test Webhook Button & Live Feedback */}
+                <div className="pt-1">
+                  <button
+                    type="button"
+                    disabled={testingWebhook || !currentAction.webhookUrl}
+                    onClick={handleTestWebhook}
+                    className="w-full py-1.5 px-3 rounded-lg bg-slate-900 dark:bg-slate-700 hover:bg-slate-800 text-white font-semibold text-xs flex items-center justify-center gap-1.5 disabled:opacity-50 transition-colors"
+                  >
+                    {testingWebhook ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>Dispatching Test Request...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Play className="w-3.5 h-3.5 text-emerald-400" />
+                        <span>Test Webhook Call</span>
+                      </>
+                    )}
+                  </button>
+
+                  {webhookTestStatus && (
+                    <div
+                      className={`mt-2 p-2 rounded-lg text-[11px] font-mono flex items-center gap-1.5 ${
+                        webhookTestStatus.ok
+                          ? 'bg-emerald-950/40 text-emerald-300 border border-emerald-800/50'
+                          : 'bg-rose-950/40 text-rose-300 border border-rose-800/50'
+                      }`}
+                    >
+                      {webhookTestStatus.ok ? (
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+                      ) : (
+                        <AlertCircle className="w-3.5 h-3.5 text-rose-400 flex-shrink-0" />
+                      )}
+                      <span>
+                        Status: <b>{webhookTestStatus.status}</b> — {webhookTestStatus.text}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* 3. Scroll Anchor Config */}
+            {currentAction.type === 'scroll_anchor' && (
+              <div className="p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3">
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200">
+                  <Anchor className="w-4 h-4 text-indigo-500" />
+                  <span>Smooth Scroll Anchor</span>
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-medium text-slate-600 dark:text-slate-400 block mb-1">
+                    Target Section / Element
+                  </label>
+                  <select
+                    value={currentAction.anchorNodeId || ''}
+                    onChange={(e) => handleActionChange({ anchorNodeId: e.target.value })}
+                    className="w-full text-xs px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 outline-none"
+                  >
+                    <option value="">Select element to scroll to...</option>
+                    {Object.values(nodes)
+                      .filter((n) => n.id !== 'root' && (n.type === 'Section' || n.type === 'Container' || n.type === 'Heading'))
+                      .map((n) => (
+                        <option key={n.id} value={n.id}>
+                          #{n.id} — {n.name || n.type}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+              </div>
+            )}
+
+            {/* 4. External URL Config */}
+            {currentAction.type === 'external_url' && (
+              <div className="p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3">
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200">
+                  <ExternalLink className="w-4 h-4 text-indigo-500" />
+                  <span>External Destination</span>
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-medium text-slate-600 dark:text-slate-400 block mb-1">
+                    Destination Web URL
+                  </label>
+                  <input
+                    type="url"
+                    placeholder="https://example.com"
+                    value={currentAction.url || ''}
+                    onChange={(e) => handleActionChange({ url: e.target.value })}
+                    className="w-full text-xs px-2.5 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 font-mono outline-none"
+                  />
+                </div>
+
+                <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-600 dark:text-slate-300">
+                  <input
+                    type="checkbox"
+                    checked={currentAction.openInNewTab !== false}
+                    onChange={(e) => handleActionChange({ openInNewTab: e.target.checked })}
+                    className="accent-indigo-600 rounded"
+                  />
+                  <span>Open in new tab (target="_blank")</span>
+                </label>
+              </div>
+            )}
+
+            {/* 5. Modal Dialog Config */}
+            {currentAction.type === 'open_modal' && (
+              <div className="p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3">
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200">
+                  <MessageSquare className="w-4 h-4 text-indigo-500" />
+                  <span>Interactive Popup Modal</span>
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-medium text-slate-600 dark:text-slate-400 block mb-1">
+                    Modal Title
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Schedule a Product Walkthrough"
+                    value={currentAction.modalTitle || ''}
+                    onChange={(e) => handleActionChange({ modalTitle: e.target.value })}
+                    className="w-full text-xs px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-medium text-slate-600 dark:text-slate-400 block mb-1">
+                    Modal Content / Body
+                  </label>
+                  <textarea
+                    rows={2}
+                    placeholder="Enter message or prompt shown inside the dialog overlay."
+                    value={currentAction.modalContent || ''}
+                    onChange={(e) => handleActionChange({ modalContent: e.target.value })}
+                    className="w-full text-xs p-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 outline-none resize-none font-sans"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* 6. CMS / Database Submission Config */}
+            {currentAction.type === 'cms_submit' && (
+              <div className="p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3">
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200">
+                  <Database className="w-4 h-4 text-purple-500" />
+                  <span>CMS Database Submission</span>
+                </div>
+
+                {project.siteType === 'dynamic' ? (
+                  <>
+                    <div>
+                      <label className="text-[11px] font-medium text-slate-600 dark:text-slate-400 block mb-1">
+                        Target Collection
+                      </label>
+                      <select
+                        value={currentAction.collectionName || ''}
+                        onChange={(e) => handleActionChange({ collectionName: e.target.value })}
+                        className="w-full text-xs px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 outline-none"
+                      >
+                        <option value="">Select Database Collection...</option>
+                        {(project.collections || []).map((col) => (
+                          <option key={col.id} value={col.name}>
+                            {col.label} ({col.name})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="text-[11px] font-medium text-slate-600 dark:text-slate-400 block mb-1">
+                        Success Message
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Submission saved to database!"
+                        value={currentAction.successMessage || ''}
+                        onChange={(e) => handleActionChange({ successMessage: e.target.value })}
+                        className="w-full text-xs px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 outline-none"
+                      />
+                    </div>
+                  </>
+                ) : (
+                  <div className="p-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-[11px] text-amber-800 dark:text-amber-200 space-y-2">
+                    <p>This project is currently marked as a <b>Static Website</b> (no database attached).</p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        useEditorStore.setState((s) => ({
+                          project: {
+                            ...s.project,
+                            siteType: 'dynamic',
+                            dbConfig: {
+                              engine: 'sqlite',
+                              is_inbuilt: true,
+                              status: 'connected',
+                              latency_ms: 2,
+                            },
+                          },
+                        }));
+                      }}
+                      className="w-full py-1 text-xs font-semibold rounded bg-indigo-600 text-white hover:bg-indigo-700 transition-colors"
+                    >
+                      Enable Inbuilt Database
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* 7. E-Commerce Cart Action */}
+            {currentAction.type === 'cart_action' && (
+              <div className="p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3">
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200">
+                  <ShoppingBag className="w-4 h-4 text-emerald-500" />
+                  <span>E-Commerce Cart / Checkout</span>
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-medium text-slate-600 dark:text-slate-400 block mb-1">
+                    Product Identifier / SKU
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="prod_solis_chair"
+                    value={currentAction.productId || ''}
+                    onChange={(e) => handleActionChange({ productId: e.target.value })}
+                    className="w-full text-xs px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 font-mono outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-medium text-slate-600 dark:text-slate-400 block mb-1">
+                    Unit Price ($)
+                  </label>
+                  <input
+                    type="number"
+                    placeholder="120"
+                    value={currentAction.productPrice || ''}
+                    onChange={(e) => handleActionChange({ productPrice: Number(e.target.value) })}
+                    className="w-full text-xs px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 font-mono outline-none"
+                  />
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

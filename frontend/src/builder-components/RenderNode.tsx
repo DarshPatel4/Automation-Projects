@@ -5,7 +5,7 @@ import { useEditorStore } from '../stores/editorStore';
 import { ComponentNode, Breakpoint, ComponentStyle } from '../types/builder';
 import { LucideIcon } from '../components/ui/LucideIcon';
 import { cn } from '../utils/cn';
-import { Plus, Trash2, Copy, GripVertical, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Lock, Unlock } from 'lucide-react';
+import { Plus, Trash2, Copy, GripVertical, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Lock, Unlock, Zap } from 'lucide-react';
 
 interface RenderNodeProps {
   nodeId: string;
@@ -17,6 +17,7 @@ export const RenderNode: React.FC<RenderNodeProps> = ({ nodeId }) => {
   const hoveredNodeId = useEditorStore((s) => s.hoveredNodeId);
   const activeBreakpoint = useEditorStore((s) => s.activeBreakpoint);
   const previewMode = useEditorStore((s) => s.previewMode);
+  const executeNodeAction = useEditorStore((s) => s.executeNodeAction);
 
   const selectNode = useEditorStore((s) => s.selectNode);
   const setHoveredNode = useEditorStore((s) => s.setHoveredNode);
@@ -108,7 +109,13 @@ export const RenderNode: React.FC<RenderNodeProps> = ({ nodeId }) => {
   };
 
   const handleClick = (e: React.MouseEvent) => {
-    if (previewMode) return;
+    if (previewMode) {
+      if (node.props?.action && node.props.action.type !== 'none') {
+        e.stopPropagation();
+        executeNodeAction(node.props.action);
+      }
+      return;
+    }
     e.stopPropagation();
     selectNode(nodeId);
   };
@@ -195,7 +202,17 @@ export const RenderNode: React.FC<RenderNodeProps> = ({ nodeId }) => {
     switch (node.type) {
       case 'Icon': {
         return (
-          <div style={inlineStyle} className="inline-flex items-center justify-center">
+          <div
+            style={inlineStyle}
+            className={`inline-flex items-center justify-center ${previewMode && node.props?.action?.type !== 'none' ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''}`}
+            onClick={(e) => {
+              if (previewMode && node.props?.action && node.props.action.type !== 'none') {
+                e.preventDefault();
+                e.stopPropagation();
+                executeNodeAction(node.props.action);
+              }
+            }}
+          >
             <LucideIcon
               name={node.props?.iconName || 'Layers'}
               size={node.props?.size || 20}
@@ -243,7 +260,15 @@ export const RenderNode: React.FC<RenderNodeProps> = ({ nodeId }) => {
             suppressContentEditableWarning
             onBlur={(e) => updateNodeProps(nodeId, { label: (e.currentTarget as HTMLElement).innerText })}
             onClick={(e) => {
-              if (!previewMode) e.preventDefault();
+              if (previewMode) {
+                if (node.props?.action && node.props.action.type !== 'none') {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  executeNodeAction(node.props.action);
+                }
+              } else {
+                e.preventDefault();
+              }
             }}
           >
             {node.props?.label || 'Click Me'}
@@ -254,13 +279,21 @@ export const RenderNode: React.FC<RenderNodeProps> = ({ nodeId }) => {
       case 'Link': {
         return (
           <a
-            href={previewMode ? (node.props?.href || '#') : undefined}
+            href={previewMode ? (node.props?.action?.url || node.props?.href || '#') : undefined}
             style={inlineStyle}
             contentEditable={isSelected}
             suppressContentEditableWarning
             onBlur={(e) => updateNodeProps(nodeId, { text: (e.currentTarget as HTMLElement).innerText })}
             onClick={(e) => {
-              if (!previewMode) e.preventDefault();
+              if (previewMode) {
+                if (node.props?.action && node.props.action.type !== 'none') {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  executeNodeAction(node.props.action);
+                }
+              } else {
+                e.preventDefault();
+              }
             }}
           >
             {node.props?.text || 'Link Text'}
@@ -367,6 +400,12 @@ export const RenderNode: React.FC<RenderNodeProps> = ({ nodeId }) => {
             <div className="flex items-center gap-1 text-slate-400 font-mono text-[10px] pr-1.5 border-r border-slate-700">
               <GripVertical className="w-3.5 h-3.5 text-indigo-400 cursor-grab" />
               <span className="text-white font-sans font-medium">{node.name || node.type}</span>
+              {node.props?.action && node.props.action.type !== 'none' && (
+                <span className="ml-1 px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[9px] font-bold flex items-center gap-1">
+                  <Zap className="w-2.5 h-2.5 text-amber-400" />
+                  {node.props.action.type.replace('_', ' ')}
+                </span>
+              )}
             </div>
 
             {/* Reorder Sibling Up / Down (Canva layer position) */}

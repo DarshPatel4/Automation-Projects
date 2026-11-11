@@ -5,17 +5,17 @@ import django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 django.setup()
 
-from apps.websites.models import Workspace, Website, Page
+from apps.websites.models import Workspace, Website, Page, CMSCollectionRecord
 from apps.templates.models import Template, TemplateCategory
 
 def seed():
-    print("Seeding initial workspaces, categories, templates, and default project...")
+    print("Seeding initial workspaces, categories, templates, and default project with DB config...")
 
     # Seed Default Workspaces (Folders)
     client_ws, _ = Workspace.objects.get_or_create(
         slug='client-projects',
         defaults={
-            'name': 'Client Projects',
+            'name': 'Client Deliverables',
             'description': 'Commercial production websites and client deliverables',
             'icon': 'Briefcase',
             'color': '#6366f1',
@@ -25,8 +25,8 @@ def seed():
     personal_ws, _ = Workspace.objects.get_or_create(
         slug='personal-brands',
         defaults={
-            'name': 'Personal Brands & Portfolios',
-            'description': 'Personal portfolios, creator hubs, and resume websites',
+            'name': 'Personal Brands',
+            'description': 'Portfolios, creator hubs, and resume websites',
             'icon': 'User',
             'color': '#ec4899',
         }
@@ -98,13 +98,34 @@ def seed():
         }
     )
 
-    # Seed Default Website Project with Workspace
+    # 1. Dynamic Website: Nexus Cloud Platform (With Inbuilt DB & Leads Collection)
     site, created = Website.objects.get_or_create(
         subdomain='apex-demo',
         defaults={
             'name': 'Nexus Cloud Platform',
             'slug': 'nexus-cloud-platform',
             'workspace': client_ws,
+            'site_type': 'dynamic',
+            'storage_usage_bytes': 1024 * 1024 * 12, # 12 MB
+            'db_config': {
+                'engine': 'sqlite',
+                'is_inbuilt': True,
+                'status': 'connected',
+                'latency_ms': 2,
+                'database_name': 'nexus_managed_db.sqlite3',
+            },
+            'collections_schema': [
+                {
+                    'name': 'leads',
+                    'label': 'Inbound Contact Leads',
+                    'fields': ['fullName', 'email', 'company', 'budget', 'message'],
+                },
+                {
+                    'name': 'testimonials',
+                    'label': 'Customer Testimonials',
+                    'fields': ['author', 'company', 'quote', 'rating'],
+                }
+            ],
             'theme_config': {
                 'primaryColor': '#4f46e5',
                 'fontFamily': 'Inter, sans-serif',
@@ -113,23 +134,97 @@ def seed():
             'is_published': True,
         }
     )
-    if not created and not site.workspace:
+    if not created:
+        site.site_type = 'dynamic'
         site.workspace = client_ws
+        site.storage_usage_bytes = 1024 * 1024 * 12
+        site.db_config = {
+            'engine': 'sqlite',
+            'is_inbuilt': True,
+            'status': 'connected',
+            'latency_ms': 2,
+            'database_name': 'nexus_managed_db.sqlite3',
+        }
+        site.collections_schema = [
+            {
+                'name': 'leads',
+                'label': 'Inbound Contact Leads',
+                'fields': ['fullName', 'email', 'company', 'budget', 'message'],
+            },
+            {
+                'name': 'testimonials',
+                'label': 'Customer Testimonials',
+                'fields': ['author', 'company', 'quote', 'rating'],
+            }
+        ]
         site.save()
 
-    if created:
-        Page.objects.create(
-            website=site,
-            title='Home',
-            slug='/',
-            is_home=True,
-            root_node_id='root',
-            nodes={},
-            seo_title='Nexus Cloud | Next-Generation Edge Network',
-            seo_description='Deploy global web applications with zero cold starts and sub-millisecond edge routing.'
-        )
+    # Seed Sample CMS Record
+    CMSCollectionRecord.objects.get_or_create(
+        website=site,
+        collection_name='leads',
+        defaults={
+            'data': {
+                'fullName': 'Sarah Jenkins',
+                'email': 'sarah@vertexcorp.io',
+                'company': 'Vertex Solutions',
+                'budget': '$25,000+',
+                'message': 'Interested in migrating our global edge infrastructure to Nexus.',
+            }
+        }
+    )
 
-    print("Database seeding completed successfully with Workspaces & Templates!")
+    # 2. Dynamic Website: Solis Storefront (With Inbuilt DB & Products)
+    ecom_site, ecom_created = Website.objects.get_or_create(
+        subdomain='solis-store',
+        defaults={
+            'name': 'Solis Modern Storefront',
+            'slug': 'solis-modern-storefront',
+            'workspace': ecommerce_ws,
+            'site_type': 'dynamic',
+            'storage_usage_bytes': 1024 * 1024 * 48, # 48 MB
+            'db_config': {
+                'engine': 'sqlite',
+                'is_inbuilt': True,
+                'status': 'connected',
+                'latency_ms': 3,
+                'database_name': 'solis_catalog.sqlite3',
+            },
+            'collections_schema': [
+                {
+                    'name': 'products',
+                    'label': 'Store Products',
+                    'fields': ['title', 'price', 'sku', 'inStock', 'imageUrl'],
+                }
+            ],
+            'theme_config': {
+                'primaryColor': '#0d9488',
+                'fontFamily': 'Plus Jakarta Sans, sans-serif',
+            },
+            'is_published': False,
+        }
+    )
+
+    # 3. Static Website: Minimal Creator Studio (View-Only / No DB)
+    static_site, static_created = Website.objects.get_or_create(
+        subdomain='creator-studio',
+        defaults={
+            'name': 'Minimal Creator Studio',
+            'slug': 'minimal-creator-studio',
+            'workspace': personal_ws,
+            'site_type': 'static',
+            'storage_usage_bytes': 1024 * 380, # 380 KB (ultra-lightweight static)
+            'db_config': {},
+            'collections_schema': [],
+            'theme_config': {
+                'primaryColor': '#0f172a',
+                'fontFamily': 'Plus Jakarta Sans, sans-serif',
+            },
+            'is_published': True,
+        }
+    )
+
+    print("Database seeding completed with Static & Dynamic (Inbuilt DB) websites!")
 
 if __name__ == '__main__':
     seed()
